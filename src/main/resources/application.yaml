@@ -22,7 +22,3 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp.use_jdbc_metadata_defaults: false
         boot.allow_jdbc_metadata_access: false
-  security:
-    user:
-      name: admin
-      password: proyecto3d
