@@ -10,5 +10,5 @@ public enum ProjectState {
     WAITING_FINAL_APPROVAL, // Esperando Aprobación final.
     GENERATING_3D_MODEL, // Generando modelo 3D.
     COMPLETED, // Completado.
-    FILLED // Error en proceso.
+    FAILED // Error en proceso.
 }

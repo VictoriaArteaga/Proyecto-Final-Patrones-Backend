@@ -33,9 +33,12 @@ public class ProjectParameters {
 
     // Elementos opcionales.
     @ElementCollection
+    @CollectionTable(name = "project_additional_elements",
+            joinColumns = @JoinColumn(name = "parameters_id"))
+    @Column(name = "element")
     private List<String> additionalElements;
 
-    // Descripción detallada en texto plano.
+    // Descripción detallada en texto plan
     @Column
     private String detailDescription;
 
