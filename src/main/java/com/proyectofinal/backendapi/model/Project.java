@@ -1,7 +1,6 @@
 package com.proyectofinal.backendapi.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -14,8 +13,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 
 public class Project {
 
@@ -61,5 +58,73 @@ public class Project {
     // Fecha automática al editar.
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    private Project(Builder builder) { // El constructor recibe a Builder.
+        this.name = builder.name;
+        this.status = builder.status;
+        this.user = builder.user;
+        this.imageOriginalUrl = builder.imageOriginalUrl;
+        this.parameters = builder.parameters;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // Patrón Builder - INNER clase //
+    public static class Builder {
+
+        private String name;
+        private ProjectState status;
+        private User user;
+        private String imageOriginalUrl;
+        private ProjectParameters parameters;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder status(ProjectState status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
+            return this;
+        }
+
+        public Builder imageOriginalUrl(String imageOriginalUrl) {
+            this.imageOriginalUrl = imageOriginalUrl;
+            return this;
+        }
+
+        public Builder parameters(ProjectParameters parameters) {
+            this.parameters = parameters;
+            return this;
+        }
+
+        public Project build() {
+            validate();
+            return new Project(this);
+        }
+
+        private void validate() {
+            if (name == null || name.isBlank()) {
+                throw new IllegalStateException("Project name is required.");
+            }
+            if (status == null) {
+                throw new IllegalStateException("Project state is mandatory.");
+            }
+            if (user == null) {
+                throw new IllegalStateException("A valid user is required.");
+            }
+            if (imageOriginalUrl == null || imageOriginalUrl.isBlank()) {
+                throw new IllegalStateException("The original terrain image is required.");
+            }
+        }
+
+    }
 
 }
