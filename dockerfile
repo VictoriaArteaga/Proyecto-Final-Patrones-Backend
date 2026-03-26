@@ -1,9 +1,15 @@
-FROM eclipse-temurin:21-jdk-jammy
-
+# Etapa 1: build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
 
-COPY target/backendapi-0.0.1-SNAPSHOT.jar app.jar
+# Etapa 2: runtime
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+COPY --from=build /app/target/backendapi-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
+ENTRYPOINT ["java","-jar","app.jar"]
 
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+
