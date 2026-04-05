@@ -4,7 +4,6 @@ import com.proyectofinal.backendapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 
-import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.path;
 
 // Facade.
 @RequiredArgsConstructor
@@ -33,11 +31,6 @@ public class SupabaseStorageService implements StorageService{
     private String bucketName;
 
     private final WebClient webClient;
-
-    @Bean
-    public WebClient webClient() {
-        return WebClient.builder().build();
-    }
 
     @Override
     public String uploadImage(MultipartFile file, String folder) {
