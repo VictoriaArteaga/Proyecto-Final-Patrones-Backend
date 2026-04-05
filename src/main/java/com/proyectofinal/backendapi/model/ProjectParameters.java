@@ -10,7 +10,6 @@ import lombok.*;
 @NoArgsConstructor // Constructor vacío.
 @AllArgsConstructor // Constructor con todos los campos.
 @Builder
-
 public class ProjectParameters {
 
     @Id
