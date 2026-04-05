@@ -13,7 +13,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class Project {
 
     @Id
