@@ -1,5 +1,8 @@
 package com.proyectofinal.backendapi.service.impl;
 
+import com.proyectofinal.backendapi.config.SupabaseConfig;
+import com.proyectofinal.backendapi.exception.BadRequestException;
+import com.proyectofinal.backendapi.exception.InvalidStateException;
 import com.proyectofinal.backendapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
@@ -20,16 +23,7 @@ import java.io.IOException;
 public class SupabaseStorageService implements StorageService{
 
     private static final Logger logger = LoggerFactory.getLogger(SupabaseStorageService.class);
-
-    @Value("${supabase.url}")
-    private String supabaseUrl;
-
-    @Value("${supabase.key}")
-    private String supabaseKey;
-
-    @Value("${supabase.bucket}")
-    private String bucketName;
-
+    private final SupabaseConfig supabaseConfig;
     private final WebClient webClient;
 
     @Override
@@ -45,59 +39,84 @@ public class SupabaseStorageService implements StorageService{
     // Método privado generíco.
     private String uploadFile(MultipartFile file, String path) {
 
-        // 1. Generar el nombre único del archivo
         String fileName = path + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        String url = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, fileName);
+
+        String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
+                supabaseConfig.getUrl(),
+                supabaseConfig.getBucket(),
+                fileName
+        );
 
         try {
-            // 2. Extraer datos del archivo de forma segura antes del WebClient.
             byte[] fileBytes = file.getBytes();
-            String contentType = (file.getContentType() != null) ? file.getContentType() : "application/octet-stream";
 
-            // 3. Ejecutar la petición a Supabase.
+            String contentType = (file.getContentType() != null)
+                    ? file.getContentType()
+                    : "application/octet-stream";
+
             webClient.post()
-                    .uri(url)
-                    .header("Authorization", "Bearer " + supabaseKey)
-                    .header("apiKey", supabaseKey)
+                    .uri(uploadUrl)
+                    .header("Authorization", "Bearer " + supabaseConfig.getKey())
+                    .header("apiKey", supabaseConfig.getKey())
                     .contentType(MediaType.parseMediaType(contentType))
                     .bodyValue(fileBytes)
                     .retrieve()
-                    // Manejo de errores HTTP de Supabase (4xx, 5xx)
                     .onStatus(status -> !status.is2xxSuccessful(), response ->
                             response.bodyToMono(String.class)
-                                    .flatMap(body -> Mono.error(new RuntimeException("Supabase Error: " + body)))
+                                    .flatMap(body -> {
+                                        logger.error("Error de carga de Supabase: {}", body);
+                                        return Mono.error(new BadRequestException("Error al subir archivo: " + body));
+                                    })
                     )
                     .bodyToMono(String.class)
-                    .block(); // Esperamos el resultado de forma síncrona.
+                    .block();
 
-            // 4. Retornar la URL pública del archivo subido.
-            return String.format("%s/storage/v1/object/public/%s/%s", supabaseUrl, bucketName, fileName);
+            // URL pública
+            return String.format("%s/storage/v1/object/public/%s/%s",
+                    supabaseConfig.getUrl(),
+                    supabaseConfig.getBucket(),
+                    fileName
+            );
 
         } catch (IOException e) {
-            logger.error("Error reading file bytes: {}", e.getMessage());
-            throw new RuntimeException("Could not read the uploaded file.");
+            logger.error("Error al leer el archivo: {}", e.getMessage());
+            throw new BadRequestException("No se pudo leer el archivo.");
         } catch (Exception e) {
-            logger.error("Critical error uploading file to Supabase: {}", e.getMessage());
-            throw new RuntimeException("The file could not be uploaded to the cloud.");
+            logger.error("Error crítico al cargar el archivo: {}", e.getMessage());
+            throw new InvalidStateException("No se pudo subir el archivo al storage.");
         }
     }
 
     @Override
     public void deleteFile(String fileUrl) {
+
         try {
-            String path = fileUrl.split("/object/public/" + bucketName + "/")[1];
-            String url = String.format("%s/storage/v1/object/%s/%s", supabaseUrl, bucketName, path);
+            String path = fileUrl.split("/object/public/" + supabaseConfig.getBucket() + "/")[1];
+
+            String deleteUrl = String.format("%s/storage/v1/object/%s/%s",
+                    supabaseConfig.getUrl(),
+                    supabaseConfig.getBucket(),
+                    path
+            );
 
             webClient.delete()
-                    .uri(url)
-                    .header("Authorization", "Bearer " + supabaseKey)
-                    .header("apiKey", supabaseKey)
+                    .uri(deleteUrl)
+                    .header("Authorization", "Bearer " + supabaseConfig.getKey())
+                    .header("apiKey", supabaseConfig.getKey())
                     .retrieve()
-                    .onStatus(status -> !status.is2xxSuccessful(), response -> Mono.error(new RuntimeException("Delete failed")))
+                    .onStatus(status -> !status.is2xxSuccessful(), response ->
+                            response.bodyToMono(String.class)
+                                    .flatMap(body -> {
+                                        logger.error("Error al eliminar Supabase: {}", body);
+                                        return Mono.error(new BadRequestException("Error al eliminar archivo."));
+                                    })
+                    )
                     .toBodilessEntity()
                     .block();
+
         } catch (Exception e) {
-            logger.error("The file could not be deleted from Supabase: {}", e.getMessage());
+            logger.error("Error al eliminar el archivo: {}", e.getMessage());
+            throw new InvalidStateException("No se pudo eliminar el archivo.");
         }
     }
 

@@ -92,5 +92,12 @@ public class UserService {
         user.setPasswordResetTokenExpiry(null);
         userRepository.save(user);
     }
+
+    // ENCONTRAR USUARIO POR EMAIL.
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
 }
 

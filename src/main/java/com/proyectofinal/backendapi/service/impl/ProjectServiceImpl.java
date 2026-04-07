@@ -1,6 +1,8 @@
 package com.proyectofinal.backendapi.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.proyectofinal.backendapi.dto.project.ParametersDTO;
+import com.proyectofinal.backendapi.exception.InvalidStateException;
 import com.proyectofinal.backendapi.exception.ProjectNotFoundException;
 import com.proyectofinal.backendapi.model.*;
 import com.proyectofinal.backendapi.repository.ProjectRepository;
@@ -14,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,7 +34,7 @@ public class ProjectServiceImpl implements ProjectService {
     public Project createProjectWithImage(MultipartFile file, User user, String name) {
 
         // Log con contexto de usuario.
-        logger.info("User {} is creating project: '{}'", user.getId(), name);
+        logger.info("El usuario {} está creando el proyecto: '{}'", user.getId(), name);
 
         // Carpeta organizada por ID de usuario.
         String path = user.getId().toString();
@@ -62,9 +63,12 @@ public class ProjectServiceImpl implements ProjectService {
     private void validateState(Project project, ProjectState... expectedStates) {
         boolean isValid = Arrays.asList(expectedStates).contains(project.getStatus());
         if (!isValid) {
-            logger.error("State conflict in project {}: current {}, expected {}",
+            logger.error("Conflicto de estado en el proyecto {}: actual {}, esperado {}",
                     project.getId(), project.getStatus(), Arrays.toString(expectedStates));
-            throw new IllegalStateException("Operation not permitted in the current state.");
+            throw new InvalidStateException(
+                    "Estado inválido. Estado actual: " + project.getStatus()
+                            + ", estados permitted: " + Arrays.toString(expectedStates)
+            );
         }
     }
 
@@ -75,7 +79,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);
 
-        logger.info("Starting asynchronous 2D generation for project: {}", projectId);
+        logger.info("Iniciando la generación 2D asíncrona para el proyecto: {}", projectId);
 
         // Aquí se llamará a la IA y el estado será GENERATING_2D.
         // Por ahora, pasamos directamente al siguiente estado lógico.
@@ -91,7 +95,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.WAITING_2D_APPROVAL);
 
-        logger.info("User {} approved 2D design for project {}", user.getId(), projectId);
+        logger.info("El usuario {} aprobó el diseño 2D para el proyecto {}.", user.getId(), projectId);
         project.setStatus(ProjectState.WAITING_FINAL_APPROVAL);
 
         return projectRepository.save(project);
@@ -104,7 +108,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.WAITING_2D_APPROVAL);
 
-        logger.warn("Project {} rejected by user {}. Waiting for new parameters.", projectId, user.getId());
+        logger.warn("Proyecto {} rechazado por el usuario {}. Esperando nuevos parámetros.", projectId, user.getId());
         project.setStatus(ProjectState.REJECTED_2D);
 
         return projectRepository.save(project);
@@ -113,11 +117,11 @@ public class ProjectServiceImpl implements ProjectService {
     // 6. ACTUALIZAR PARÁMETROS (Después del rechazo).
     @Override
     @Transactional
-    public Project updateParameters(UUID projectId, User user, Map<String, Object> params) {
+    public Project updateParameters(UUID projectId, User user, ParametersDTO params) {
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.REJECTED_2D);
 
-        logger.info("User {} updating parameters for project {}", user.getId(), projectId);
+        logger.info("El usuario {} está actualizando los parámetros del proyecto {}.", user.getId(), projectId);
 
         ProjectParameters projectParams = objectMapper.convertValue(params, ProjectParameters.class);
 
@@ -137,7 +141,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.WAITING_FINAL_APPROVAL);
 
-        logger.info("Starting final 3D generation phase for project: {}", projectId);
+        logger.info("Iniciando la fase final de generación 3D para el proyecto: {}", projectId);
 
         // Simulación de inicio de proceso 3D.
         project.setStatus(ProjectState.GENERATING_3D_MODEL);

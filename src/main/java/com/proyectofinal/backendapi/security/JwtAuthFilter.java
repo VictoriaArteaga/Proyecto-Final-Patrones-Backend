@@ -1,5 +1,7 @@
 package com.proyectofinal.backendapi.security;
 
+import com.proyectofinal.backendapi.model.User;
+import com.proyectofinal.backendapi.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +16,17 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private UserService userService;
+
+    // Constructor para JwtService (que no es circular)
+    // Usamos @Autowired y @Lazy en el setter o campo para UserService
+    public JwtAuthFilter(JwtService jwtService, @org.springframework.context.annotation.Lazy UserService userService) {
+        this.jwtService = jwtService;
+        this.userService = userService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,9 +47,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (jwtService.isTokenValid(token)) {
             String email = jwtService.extractEmail(token);
 
-            // Registrar al usuario como autenticado en Spring Security
+            // Traer el usuario real.
+            User user = userService.findByEmail(email);
+
+            // Ahora el principal es el user real.
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of());
+                    new UsernamePasswordAuthenticationToken(user, null, List.of());
 
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
