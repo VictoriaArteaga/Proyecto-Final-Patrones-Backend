@@ -1,28 +1,42 @@
 package com.proyectofinal.backendapi.controller;
 
 
-import com.proyectofinal.backendapi.model.User;
+import com.proyectofinal.backendapi.dto.auth.*;
 import com.proyectofinal.backendapi.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
-@CrossOrigin("*")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     // REGISTRO
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        return userService.register(user);
+    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO dto) {
+        return ResponseEntity.ok(userService.register(dto));
     }
-
     // LOGIN
     @PostMapping("/login")
-    public User login(@RequestBody User user) {
-        return userService.login(user.getEmail(), user.getPassword());
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto) {
+        return ResponseEntity.ok(userService.login(dto));
+    }
+
+    // Paso 1: usuario pide el link de recuperación
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody PasswordResetRequestDTO dto) {
+        userService.requestPasswordReset(dto);
+        return ResponseEntity.ok("Correo de recuperación enviado");
+    }
+
+    // Paso 2: usuario ingresa token + nueva contraseña
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetConfirmDTO dto) {
+        userService.confirmPasswordReset(dto);
+        return ResponseEntity.ok("Contraseña actualizada exitosamente");
     }
 }
