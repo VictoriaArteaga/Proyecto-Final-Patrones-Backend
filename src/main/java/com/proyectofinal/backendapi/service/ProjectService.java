@@ -1,5 +1,6 @@
 package com.proyectofinal.backendapi.service;
 
+import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.model.Project;
 import com.proyectofinal.backendapi.model.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,7 @@ public interface ProjectService {
     Project rejectProject(UUID projectId, User user);
 
     // Actualizar parámetros después de un rechazo.
-    Project updateParameters(UUID projectId, User user, Map<String, Object> params);
+    Project updateParameters(UUID id, User user, ParametersDTO params);
 
     // Iniciar la generación del modelo 3D final.
     Project generate3D(UUID projectId, User user);

@@ -2,6 +2,8 @@ package com.proyectofinal.backendapi.model;
 
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.UUID;
+
 import lombok.*;
 
 @Entity
@@ -13,9 +15,8 @@ import lombok.*;
 public class ProjectParameters {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
 
     // Dimensiones en metros cuadrados.
     private Double lotWidth;
