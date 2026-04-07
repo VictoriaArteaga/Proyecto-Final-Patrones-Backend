@@ -2,6 +2,18 @@ spring:
   application:
     name: backendapi
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}   # correo Gmail
+    password: ${MAIL_PASSWORD}   # contraseña de aplicación de Gmail
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -24,7 +36,16 @@ spring:
         temp.use_jdbc_metadata_defaults: false
         boot.allow_jdbc_metadata_access: false
 
+
 supabase:
   url: ${SUPABASE_URL}
   key: ${SUPABASE_KEY}
   bucket: ${SUPABASE_BUCKET}
+
+jwt:
+  secret: ${JWT_SECRET}          # cadena larga
+  expiration-ms: 86400000        # 24 horas en milisegundos
+
+app:
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS}
