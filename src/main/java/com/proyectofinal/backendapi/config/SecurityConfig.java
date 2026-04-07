@@ -33,9 +33,9 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        //  Rutas públicas
+                        // Rutas públicas.
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        //  Lo demas requiere toquen
+                        //  Lo demas requiere token.
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
