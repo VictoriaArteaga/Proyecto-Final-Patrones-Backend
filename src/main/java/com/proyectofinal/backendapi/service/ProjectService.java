@@ -5,7 +5,6 @@ import com.proyectofinal.backendapi.model.Project;
 import com.proyectofinal.backendapi.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
 import java.util.UUID;
 
 public interface ProjectService {
