@@ -26,14 +26,26 @@ public class AuthController {
         return ResponseEntity.ok(userService.login(dto));
     }
 
-    // Paso 1: usuario pide el link de recuperación
+    // Verificar código 2FA después del login
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<AuthResponseDTO> verifyTwoFactor(@Valid @RequestBody TwoFactorVerifyDTO dto) {
+        return ResponseEntity.ok(userService.verifyTwoFactorCode(dto));
+    }
+
+    // Activar o desactivar 2FA (ruta protegida)
+    @PostMapping("/toggle-2fa")
+    public ResponseEntity<String> toggleTwoFactor(@RequestBody TwoFactorToggleDTO dto) {
+        return ResponseEntity.ok(userService.toggleTwoFactor(dto));
+    }
+
+    //usuario pide el link de recuperación
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody PasswordResetRequestDTO dto) {
         userService.requestPasswordReset(dto);
         return ResponseEntity.ok("Correo de recuperación enviado");
     }
 
-    // Paso 2: usuario ingresa token + nueva contraseña
+    //usuario ingresa token + nueva contraseña
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetConfirmDTO dto) {
         userService.confirmPasswordReset(dto);
