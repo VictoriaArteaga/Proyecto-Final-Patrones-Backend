@@ -36,4 +36,15 @@ public class EmailService {
                 + "Si no solicitaste esto, ignora este correo.\n\nEl equipo.");
         mailSender.send(message);
     }
+
+    // Correo con código 2FA
+    public void sendTwoFactorCode(String toEmail, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Tu código de verificación");
+        message.setText("Tu código de verificación es: " + code + "\n\n"
+                + "Este código expira en 10 minutos.\n\n"
+                + "Si no iniciaste sesión, ignora este mensaje.");
+        mailSender.send(message);
+    }
 }

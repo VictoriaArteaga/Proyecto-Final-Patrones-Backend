@@ -7,6 +7,7 @@ import com.proyectofinal.backendapi.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.security.SecureRandom;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -41,7 +42,7 @@ public class UserService {
         emailService.sendWelcomeEmail(user.getEmail(), user.getUsername());
 
         String token = jwtService.generateToken(user.getEmail());
-        return new AuthResponseDTO(token, user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponseDTO(token, user.getUsername(), user.getEmail(), user.getRole().name(), false);
     }
 
     // LOGIN
@@ -53,8 +54,59 @@ public class UserService {
             throw new RuntimeException("Contraseña incorrecta");
         }
 
+        if (user.isTwoFactorEnabled()) {
+            String code = generateSixDigitCode();
+            user.setTwoFactorCode(code);
+            user.setTwoFactorCodeExpiry(LocalDateTime.now().plusMinutes(10));
+            userRepository.save(user);
+
+            emailService.sendTwoFactorCode(user.getEmail(), code);
+
+            // Avisa al frontend que necesita el código
+            return new AuthResponseDTO(null, user.getUsername(), user.getEmail(), user.getRole().name(), true);
+        }
+
         String token = jwtService.generateToken(user.getEmail());
-        return new AuthResponseDTO(token, user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponseDTO(token, user.getUsername(), user.getEmail(), user.getRole().name(), false);
+    }
+
+    // Verifica el código 2FA-
+    public AuthResponseDTO verifyTwoFactorCode(TwoFactorVerifyDTO dto) {
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (user.getTwoFactorCode() == null || !user.getTwoFactorCode().equals(dto.getCode())) {
+            throw new RuntimeException("Código inválido");
+        }
+
+        if (user.getTwoFactorCodeExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("El código ha expirado");
+        }
+
+        // Limpiar el código usado
+        user.setTwoFactorCode(null);
+        user.setTwoFactorCodeExpiry(null);
+        userRepository.save(user);
+
+        String token = jwtService.generateToken(user.getEmail());
+        return new AuthResponseDTO(token, user.getUsername(), user.getEmail(), user.getRole().name(), false);
+    }
+    // Activar o desactivar 2FA
+    public String toggleTwoFactor(TwoFactorToggleDTO dto) {
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setTwoFactorEnabled(dto.isEnable());
+        userRepository.save(user);
+
+        return dto.isEnable() ? "2FA activado correctamente" : "2FA desactivado correctamente";
+    }
+
+    // Genera código de 6 dígitos seguro
+    private String generateSixDigitCode() {
+        SecureRandom random = new SecureRandom();
+        int code = 100000 + random.nextInt(900000); // siempre 6 dígitos
+        return String.valueOf(code);
     }
 
     // Solicitar recuperación de contraseña

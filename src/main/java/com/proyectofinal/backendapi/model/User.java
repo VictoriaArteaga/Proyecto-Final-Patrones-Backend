@@ -41,6 +41,12 @@ public class User {
     @Builder.Default
     private Role role = Role.USER;
 
+    @Column(columnDefinition = "boolean default false")
+    private boolean twoFactorEnabled = false;
+
+    private String twoFactorCode;
+    private LocalDateTime twoFactorCodeExpiry;
+
     public enum Role {
         USER, ADMIN
     }

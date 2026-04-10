@@ -10,4 +10,5 @@ public class AuthResponseDTO {
     private String username;
     private String email;
     private String role;
+    private boolean requires2FA;
 }
