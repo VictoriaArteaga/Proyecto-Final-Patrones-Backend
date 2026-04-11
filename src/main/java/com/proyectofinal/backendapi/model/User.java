@@ -47,7 +47,4 @@ public class User {
     private String twoFactorCode;
     private LocalDateTime twoFactorCodeExpiry;
 
-    public enum Role {
-        USER, ADMIN
-    }
 }

@@ -1,6 +1,7 @@
 package com.proyectofinal.backendapi.service;
 
 import com.proyectofinal.backendapi.dto.auth.*;
+import com.proyectofinal.backendapi.model.Role;
 import com.proyectofinal.backendapi.model.User;
 import com.proyectofinal.backendapi.repository.UserRepository;
 import com.proyectofinal.backendapi.security.JwtService;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
+import com.proyectofinal.backendapi.exception.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,7 +27,7 @@ public class UserService {
     // REGISTRO
     public AuthResponseDTO register(RegisterRequestDTO dto) {
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("El correo ya está registrado");
+            throw new BadRequestException("El correo ya está registrado");
         }
 
         User user = User.builder()
@@ -33,7 +35,7 @@ public class UserService {
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword())) //  encriptada
                 .recoveryEmail(dto.getRecoveryEmail())
-                .role(User.Role.USER)
+                .role(Role.USER)
                 .build();
 
         userRepository.save(user);
@@ -48,10 +50,10 @@ public class UserService {
     // LOGIN
     public AuthResponseDTO login(LoginRequestDTO dto) {
         User user = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UnauthorizedException("Usuario no encontrado"));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Contraseña incorrecta");
+            throw new UnauthorizedException("Contraseña incorrecta");
         }
 
         if (user.isTwoFactorEnabled()) {
@@ -73,14 +75,14 @@ public class UserService {
     // Verifica el código 2FA-
     public AuthResponseDTO verifyTwoFactorCode(TwoFactorVerifyDTO dto) {
         User user = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UnauthorizedException("Usuario no encontrado"));
 
         if (user.getTwoFactorCode() == null || !user.getTwoFactorCode().equals(dto.getCode())) {
-            throw new RuntimeException("Código inválido");
+            throw new BadRequestException("Código inválido");
         }
 
         if (user.getTwoFactorCodeExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El código ha expirado");
+            throw new BadRequestException("El código ha expirado");
         }
 
         // Limpiar el código usado
@@ -94,7 +96,7 @@ public class UserService {
     // Activar o desactivar 2FA
     public String toggleTwoFactor(TwoFactorToggleDTO dto) {
         User user = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UnauthorizedException("Usuario no encontrado"));
 
         user.setTwoFactorEnabled(dto.isEnable());
         userRepository.save(user);
@@ -112,7 +114,7 @@ public class UserService {
     // Solicitar recuperación de contraseña
     public void requestPasswordReset(PasswordResetRequestDTO dto) {
         User user = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("No existe cuenta con ese correo"));
+                .orElseThrow(() -> new BadRequestException("No existe cuenta con ese correo"));
 
         // Generar token aleatorio seguro
         String resetToken = UUID.randomUUID().toString();
@@ -132,11 +134,11 @@ public class UserService {
     //  Confirmar nueva contraseña con el token
     public void confirmPasswordReset(PasswordResetConfirmDTO dto) {
         User user = userRepository.findByPasswordResetToken(dto.getToken())
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+                .orElseThrow(() -> new BadRequestException("Token inválido"));
 
         // Verificar que el token no haya vencido
         if (user.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El token ha expirado");
+            throw new BadRequestException("El token ha expirado");
         }
 
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
@@ -148,7 +150,7 @@ public class UserService {
     // ENCONTRAR USUARIO POR EMAIL.
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new UnauthorizedException("Usuario no encontrado"));
     }
 
 }
