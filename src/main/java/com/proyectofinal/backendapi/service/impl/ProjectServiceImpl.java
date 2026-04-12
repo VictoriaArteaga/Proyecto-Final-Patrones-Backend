@@ -2,6 +2,7 @@ package com.proyectofinal.backendapi.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
+import com.proyectofinal.backendapi.exception.BadRequestException;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
 import com.proyectofinal.backendapi.exception.ProjectNotFoundException;
 import com.proyectofinal.backendapi.model.*;
@@ -76,6 +77,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public Project generateInitial2D(UUID projectId, User user) {
+
+        // Obtener proyecto (valida que pertence al usuario).
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);
 
@@ -148,4 +151,5 @@ public class ProjectServiceImpl implements ProjectService {
 
         return projectRepository.save(project);
     }
+
 }

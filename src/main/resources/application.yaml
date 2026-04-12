@@ -49,3 +49,10 @@ jwt:
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
+
+# Conexión con AI de renderizado 2D.
+huggingface:
+  api:
+    key: ${HUGGING_FACE_KEY}
+    url: ${HUGGING_FACE_URL}
+    model: ${HUGGING_FACE_MODEL}
