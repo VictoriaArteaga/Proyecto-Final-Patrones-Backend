@@ -16,4 +16,7 @@ public class SupabaseConfig {
 
     @Value("${supabase.bucket}")
     private String bucket;
+
+    @Value("${supabase.service-role-key}")
+    private String serviceRoleKey;
 }

@@ -41,15 +41,23 @@ supabase:
   url: ${SUPABASE_URL}
   key: ${SUPABASE_KEY}
   bucket: ${SUPABASE_BUCKET}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+
+#  Seguridad JWT
 
 jwt:
   secret: ${JWT_SECRET}          # cadena larga
   expiration-ms: 86400000        # 24 horas en milisegundos
 
+#  Configuración de CORS
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
 
+# Configuración de TripoAI
+tripo:
+  api-key: ${TRIPO_API_KEY}
+  base-url: https://api.tripo3d.ai/v2/openapi/task
 # Conexión con AI de renderizado 2D.
 huggingface:
   api:

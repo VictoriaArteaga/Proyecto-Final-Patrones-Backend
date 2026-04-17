@@ -1,5 +1,4 @@
 package com.proyectofinal.backendapi.service.impl;
-
 import com.proyectofinal.backendapi.config.SupabaseConfig;
 import com.proyectofinal.backendapi.exception.BadRequestException;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
@@ -15,7 +14,8 @@ import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-
+import java.time.Duration;
+import java.util.UUID;
 
 // Facade.
 @RequiredArgsConstructor
@@ -25,6 +25,45 @@ public class SupabaseStorageService implements StorageService{
     private static final Logger logger = LoggerFactory.getLogger(SupabaseStorageService.class);
     private final SupabaseConfig supabaseConfig;
     private final WebClient webClient;
+
+    public String downloadAndUpload(String tripoModelUrl, UUID projectId) {
+        logger.info("[Supabase] Descargando modelo desde TripoAI para proyecto {}", projectId);
+
+        // 1. Descargar el modelo
+        byte[] modelBytes = webClient.get()
+                .uri(tripoModelUrl)
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .timeout(Duration.ofMinutes(2))
+                .block();
+
+        if (modelBytes == null || modelBytes.length == 0) {
+            throw new BadRequestException("No se pudo descargar el modelo desde TripoAI");
+        }
+
+        // 2. Preparar ruta y URL (Usamos el bucket de la configuración)
+        String filePath = "projects/" + projectId + "/" + UUID.randomUUID() + ".glb";
+        String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
+                supabaseConfig.getUrl(),
+                supabaseConfig.getBucket(),
+                filePath);
+
+        // 3. Subir usando la SERVICE ROLE KEY para tener permisos totales
+        webClient.post()
+                .uri(uploadUrl)
+                .header("Authorization", "Bearer " + supabaseConfig.getServiceRoleKey())
+                .header("x-upsert", "true")
+                .contentType(MediaType.parseMediaType("model/gltf-binary"))
+                .bodyValue(modelBytes)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        return String.format("%s/storage/v1/object/public/%s/%s",
+                supabaseConfig.getUrl(),
+                supabaseConfig.getBucket(),
+                filePath);
+    }
 
     @Override
     public String uploadImage(MultipartFile file, String folder) {

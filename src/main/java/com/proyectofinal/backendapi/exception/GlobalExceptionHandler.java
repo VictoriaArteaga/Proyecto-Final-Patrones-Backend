@@ -1,6 +1,8 @@
 package com.proyectofinal.backendapi.exception;
 
 import com.proyectofinal.backendapi.dto.error.ErrorResponseDTO;
+import com.proyectofinal.backendapi.render3d.integration.TripoException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -82,6 +85,16 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponseDTO.builder()
                         .message("Error interno del servidor")
                         .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+    @ExceptionHandler(TripoException.class)
+    public ResponseEntity<ErrorResponseDTO> handleTripoError(TripoException ex) {
+        log.error("[TripoAI Error] {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponseDTO.builder()
+                        .message("Error con el servicio 3D: " + ex.getMessage())
+                        .status(HttpStatus.BAD_GATEWAY.value())
                         .timestamp(LocalDateTime.now())
                         .build());
     }
