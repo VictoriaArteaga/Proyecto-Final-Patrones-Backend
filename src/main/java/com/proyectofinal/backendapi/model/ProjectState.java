@@ -11,5 +11,5 @@ public enum ProjectState {
     GENERATING_3D_MODEL, // Generando modelo 3D.
     COMPLETED, // Completado.
     FAILED, // Error en proceso.
-    DELETE // Proyecto eliminado (soft delete).
+    DELETED // Proyecto eliminado (soft delete).
 }
