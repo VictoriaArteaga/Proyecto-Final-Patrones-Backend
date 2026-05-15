@@ -110,6 +110,12 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- JavaCV: FFmpeg embebido para extracción de frames de video PixVerse -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacv-platform</artifactId>
+			<version>1.5.10</version>
+		</dependency>
 
 	</dependencies>
 

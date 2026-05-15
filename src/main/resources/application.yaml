@@ -57,10 +57,5 @@ app:
 # Configuración de TripoAI
 tripo:
   api-key: ${TRIPO_API_KEY}
-  base-url: https://api.tripo3d.ai/v2/openapi/task
-# Conexión con AI de renderizado 2D.
-huggingface:
-  api:
-    key: ${HUGGING_FACE_KEY}
-    url: ${HUGGING_FACE_URL}
-    model: ${HUGGING_FACE_MODEL}
+  base-url: https://api.tripo3d.ai/v2/openapi
+
