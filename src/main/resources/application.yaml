@@ -1,12 +1,20 @@
+server:
+  tomcat:
+    connection-timeout: 600000  # 10 minutos para conexiones Tomcat
+
 spring:
   application:
     name: backendapi
 
+  mvc:
+    async:
+      request-timeout: 600000   # 10 minutos para peticiones asíncronas
+
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}   # correo Gmail
-    password: ${MAIL_PASSWORD}   # contraseña de aplicación de Gmail
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -36,26 +44,20 @@ spring:
         temp.use_jdbc_metadata_defaults: false
         boot.allow_jdbc_metadata_access: false
 
-
 supabase:
   url: ${SUPABASE_URL}
   key: ${SUPABASE_KEY}
   bucket: ${SUPABASE_BUCKET}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
 
-#  Seguridad JWT
-
 jwt:
-  secret: ${JWT_SECRET}          # cadena larga
-  expiration-ms: 86400000        # 24 horas en milisegundos
+  secret: ${JWT_SECRET}
+  expiration-ms: 86400000
 
-#  Configuración de CORS
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
 
-# Configuración de TripoAI
 tripo:
   api-key: ${TRIPO_API_KEY}
   base-url: https://api.tripo3d.ai/v2/openapi
-
