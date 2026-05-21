@@ -1,5 +1,6 @@
 package com.proyectofinal.backendapi.exception;
 
+import com.proyectofinal.backendapi.ai.integration.AiGenerationException;
 import com.proyectofinal.backendapi.dto.error.ErrorResponseDTO;
 import com.proyectofinal.backendapi.render3d.integration.TripoException;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +95,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(ErrorResponseDTO.builder()
                         .message("Error con el servicio 3D: " + ex.getMessage())
+                        .status(HttpStatus.BAD_GATEWAY.value())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+
+    // Error: 502 - falla en la integración con la IA generativa de imágenes.
+    @ExceptionHandler(AiGenerationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAiGenerationError(AiGenerationException ex) {
+        log.error("[AI Generation Error] {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponseDTO.builder()
+                        .message("Error con el servicio de IA: " + ex.getMessage())
                         .status(HttpStatus.BAD_GATEWAY.value())
                         .timestamp(LocalDateTime.now())
                         .build());
