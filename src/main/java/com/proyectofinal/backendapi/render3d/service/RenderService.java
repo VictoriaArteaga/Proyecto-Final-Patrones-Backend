@@ -23,16 +23,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RenderService {
 
-    private static final int POLL_INTERVAL_MS = 4_000;
-    private static final int MAX_WAIT_MS      = 300_000;
+    private static final int POLL_INTERVAL_MS = 5_000;
+    private static final int MAX_WAIT_MS      = 480_000;
 
     private final GenerationTaskRepository taskRepo;
     private final TripoClient              tripoClient;
     private final SupabaseStorageService   supabaseClient;
-//    PASO 1: Iniciar la generación.
+
+//  Iniciar la generación.
     @Transactional
-    public TaskStatusResponse startGeneration(Generate3DRequest request) {
-        // Creamos una "Tarea" en la base de datos con estado PENDIENTE
+    public GenerationTask startGeneration(Generate3DRequest request) {
         log.info("[RenderService] Iniciando generación 3D para proyecto {}", request.getProjectId());
 
         GenerationTask task = GenerationTask.builder()
@@ -45,9 +45,7 @@ public class RenderService {
 
         log.info("[RenderService] Tarea creada: {}", task.getId());
 
-        processAsync(task.getId(), request.getImageUrl());
-
-        return toResponse(task);
+        return task;
     }
 
     @Transactional(readOnly = true)
@@ -55,58 +53,66 @@ public class RenderService {
         GenerationTask task = findTaskOrThrow(taskId);
         return toResponse(task);
     }
-//    PASO 2: Multitarea
+//    Multitarea
 //    Se ejecuta en segundo plano para no bloquear la app.
-
-    @Async("renderTaskExecutor")
+    @Async("renderExecutor")
+    @Transactional
     public void processAsync(UUID taskId, String imageUrl) {
-        GenerationTask task = findTaskOrThrow(taskId);
+
+        GenerationTask task = taskRepo.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Tarea no encontrada en Async: " + taskId));
 
         try {
-//            A. Le envía la imagen del terreno a la IA externa
+            log.info("[RenderService] Iniciando llamada asíncrona a Tripo para Task: {}", taskId);
             String tripoTaskId = tripoClient.createImageTo3DTask(imageUrl);
-            task.markAsProcessing(tripoTaskId);
-            taskRepo.save(task);
 
-//            B. Se queda esperando y preguntando ¿Ya está listo?
+            task.markAsProcessing(tripoTaskId);
+            taskRepo.saveAndFlush(task);
+
+            // Espera activa hasta obtener URL válida
             String modelUrl = pollUntilComplete(tripoTaskId, taskId);
 
-//            C. Descarga el diseño de la IA y lo sube a Supabase
+            //  Supabase subida
             String supabaseUrl = supabaseClient.downloadAndUpload(modelUrl, task.getProjectId());
-//            D. Guarda la URL final del diseño 3D
+
+            // Guardar éxito
             task.markAsDone(supabaseUrl);
-            taskRepo.save(task);
-            log.info("[RenderService]  Generación completada. Task={} → {}", taskId, supabaseUrl);
-//            E. Si algo falla (la imagen es mala, no hay internet, etc.), marca ERROR
+            taskRepo.saveAndFlush(task);
+            log.info("[RenderService] Generación completada con éxito. Task={} → URL Supabase", taskId);
+
         } catch (Exception ex) {
-            log.error("[RenderService]  Error en tarea {}: {}", taskId, ex.getMessage(), ex);
+            log.error("[RenderService] Error crítico en segundo plano para tarea {}: {}", taskId, ex.getMessage(), ex);
             task.markAsError(ex.getMessage());
-            taskRepo.save(task);
+            taskRepo.saveAndFlush(task);
         }
     }
 
-//    PASO 3: El bucle de espera
-    private String pollUntilComplete(String tripoTaskId, UUID localTaskId) {
-        long deadline = System.currentTimeMillis() + MAX_WAIT_MS;
 
-        while (System.currentTimeMillis() < deadline) {
-            TripoTaskData data = tripoClient.getTaskStatus(tripoTaskId);
+private String pollUntilComplete(String tripoTaskId, UUID localTaskId) {
+    long deadline = System.currentTimeMillis() + MAX_WAIT_MS;
 
-            log.debug("[Polling] TripoTask={} status={} progress={}%",
-                    tripoTaskId, data.getStatus(), data.getProgress());
+    while (System.currentTimeMillis() < deadline) {
+        TripoTaskData data = tripoClient.getTaskStatus(tripoTaskId);
 
-            switch (data.getStatus()) {
-                case "success" -> {
-                    String url = data.getModelUrl();
-                    if (url == null) throw new TripoException("TripoAI: éxito pero sin URL del modelo");
+        log.info("[Polling] TripoTask={} status={} progress={}%",
+                tripoTaskId, data.getStatus(), data.getProgress());
+
+        switch (data.getStatus()) {
+            case "success" -> {
+                String url = data.getModelUrl();
+
+                if (url != null && !url.isBlank()) {
                     return url;
                 }
-                case "failed", "cancelled" -> throw new TripoException(
-                        "TripoAI: tarea finalizada con error — " + data.getMessage()
-                );
-                default -> sleep(POLL_INTERVAL_MS);
+                log.info("[Polling] Tripo dice 'success' pero la URL no está lista aún. Reintentando...");
+                sleep(POLL_INTERVAL_MS);
             }
+            case "failed", "cancelled" -> throw new TripoException(
+                    "TripoAI: tarea finalizada con error — " + data.getMessage()
+            );
+            default -> sleep(POLL_INTERVAL_MS);
         }
+    }
 
         throw new TripoException("Timeout: TripoAI tardó más de 5 minutos. Task=" + localTaskId);
     }

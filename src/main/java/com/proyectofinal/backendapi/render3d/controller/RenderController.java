@@ -4,6 +4,7 @@ package com.proyectofinal.backendapi.render3d.controller;
 import com.proyectofinal.backendapi.render3d.dto.Generate3DRequest;
 import com.proyectofinal.backendapi.render3d.dto.TaskStatusResponse;
 import com.proyectofinal.backendapi.render3d.service.RenderService;
+import com.proyectofinal.backendapi.render3d.entity.GenerationTask;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,23 @@ public class RenderController {
             @Valid @RequestBody Generate3DRequest request
     ) {
         log.info("[RenderController] POST /generate-3d — proyecto={}", request.getProjectId());
-        TaskStatusResponse response = renderService.startGeneration(request);
+
+        // 1. Crea y guarda la tarea en estado PENDING de forma ultra rápida
+        GenerationTask task = renderService.startGeneration(request);
+
+        // 2.  DISPARA EL HILO ASÍNCRONO EXTERNAMENTE
+        renderService.processAsync(task.getId(), request.getImageUrl());
+
+        // 3. Mapea la respuesta inmediata para Postman
+        TaskStatusResponse response = TaskStatusResponse.builder()
+                .taskId(task.getId())
+                .projectId(task.getProjectId())
+                .type(task.getType())
+                .status(task.getStatus())
+                .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
+                .build();
+
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 

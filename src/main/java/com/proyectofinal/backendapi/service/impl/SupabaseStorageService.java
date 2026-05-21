@@ -29,8 +29,12 @@ public class SupabaseStorageService implements StorageService{
     public String downloadAndUpload(String tripoModelUrl, UUID projectId) {
         logger.info("[Supabase] Descargando modelo desde TripoAI para proyecto {}", projectId);
 
-        // 1. Descargar el modelo
-        byte[] modelBytes = webClient.get()
+        // 1. Descargar el modelo con límite ampliado (50MB)
+        WebClient bigClient = WebClient.builder()
+                .codecs(config -> config.defaultCodecs().maxInMemorySize(50 * 1024 * 1024))
+                .build();
+
+        byte[] modelBytes = bigClient.get()
                 .uri(tripoModelUrl)
                 .retrieve()
                 .bodyToMono(byte[].class)
@@ -41,14 +45,14 @@ public class SupabaseStorageService implements StorageService{
             throw new BadRequestException("No se pudo descargar el modelo desde TripoAI");
         }
 
-        // 2. Preparar ruta y URL (Usamos el bucket de la configuración)
+        // 2. Preparar ruta y URL
         String filePath = "projects/" + projectId + "/" + UUID.randomUUID() + ".glb";
         String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
                 supabaseConfig.getUrl(),
                 supabaseConfig.getBucket(),
                 filePath);
 
-        // 3. Subir usando la SERVICE ROLE KEY para tener permisos totales
+        // 3. Subir a Supabase
         webClient.post()
                 .uri(uploadUrl)
                 .header("Authorization", "Bearer " + supabaseConfig.getServiceRoleKey())
