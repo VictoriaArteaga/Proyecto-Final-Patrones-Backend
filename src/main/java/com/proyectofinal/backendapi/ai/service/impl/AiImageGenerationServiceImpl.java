@@ -39,8 +39,8 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
     @Override
     @Transactional
     public GenerateRenderResponseDTO generateInitialRender(UUID projectId,
-                                                           User user,
-                                                           String userDescription) {
+                                                                  User user,
+                                                                  String userDescription) {
 
         Project project = findProjectOrThrow(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);

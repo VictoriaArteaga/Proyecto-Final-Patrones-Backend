@@ -1,6 +1,8 @@
 package com.proyectofinal.backendapi.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.proyectofinal.backendapi.ai.service.AiImageGenerationService;
+import com.proyectofinal.backendapi.ai.service.impl.AiImageGenerationServiceImpl;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.exception.BadRequestException;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
@@ -28,6 +30,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final StorageService storageService;
     private final ObjectMapper objectMapper; // Para procesar JSON de parámetros.
+    private final AiImageGenerationService aiImageGenerationService;
 
     // 1. CREAR PROYECTO CON IMAGEN INICIAL.
     @Override
@@ -74,21 +77,22 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     // 3. GENERAR RENDERIZADO 2D.
+    // 3. GENERAR RENDERIZADO 2D.
     @Override
     @Transactional
     public Project generateInitial2D(UUID projectId, User user) {
 
-        // Obtener proyecto (valida que pertence al usuario).
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);
 
-        logger.info("Iniciando la generación 2D asíncrona para el proyecto: {}", projectId);
+        // PASO 2: Usa la variable inyectada.
+        aiImageGenerationService.generateInitialRender(
+                projectId,
+                user,
+                "Generar diseño 2D"
+        );
 
-        // Aquí se llamará a la IA y el estado será GENERATING_2D.
-        // Por ahora, pasamos directamente al siguiente estado lógico.
-        project.setStatus(ProjectState.WAITING_2D_APPROVAL);
-
-        return projectRepository.save(project);
+        return getProjectById(projectId, user);
     }
 
     // 4. APROBAR DISEÑO 2D.
