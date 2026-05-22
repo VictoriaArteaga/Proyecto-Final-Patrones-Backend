@@ -24,8 +24,11 @@ public class CorsConfig {
 
         config.setAllowCredentials(true);
 
-        // Usamos la lista desde nuestro objeto de propiedades
-        config.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        // Permite todos los deploys de Vercel
+        config.setAllowedOriginPatterns(List.of(
+                "https://*.vercel.app"
+        ));
+
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
