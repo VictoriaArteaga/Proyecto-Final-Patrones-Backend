@@ -34,7 +34,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Rutas públicas.
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/", "/api/v1/",
+                                "/api/v1/auth/**").permitAll()
                         //  Lo demas requiere token.
                         .anyRequest().authenticated()
                 )
