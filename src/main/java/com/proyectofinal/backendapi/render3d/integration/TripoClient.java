@@ -3,6 +3,7 @@ package com.proyectofinal.backendapi.render3d.integration;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,15 +14,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Duration;
 import java.util.Map;
 
-// Usa WebClient (ya está en el proyecto con webflux).
-// Es no-bloqueante: no congela el servidor mientras espera.
+// Usa WebClient
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class TripoClient {
 
-    private static final String BASE_URL = "https://api.tripo3d.ai/v2/openapi";
+    @Value("${tripo.base-url}")
+    private String baseUrl;
 
     @Value("${tripo.api-key}")
     private String apiKey;
@@ -37,10 +38,13 @@ public class TripoClient {
 
         Map<String, Object> body = Map.of(
                 "type", "image_to_model",
+                "model_version", "v2.5-20250123",
                 "file", Map.of(
-                        "type", inferFileType(imageUrl),
-                        "url",  imageUrl
-                )
+                        "type", inferFileType(imageUrl), // Detecta png, webp o jpg
+                        "url", imageUrl
+                ),
+                "texture", true,
+                "pbr", true
         );
 
         TripoCreateResponse response = buildClient()
@@ -50,14 +54,15 @@ public class TripoClient {
                 .retrieve()
                 .bodyToMono(TripoCreateResponse.class)
                 .timeout(Duration.ofSeconds(30))
-                .block(); // bloqueamos aquí porque esto es rápido (solo crea la tarea)
+                .block();
 
         if (response == null || response.getCode() != 0) {
+            log.error("[TripoAI] Error en respuesta: {}", response);
             throw new TripoException("TripoAI no pudo crear la tarea");
         }
 
         String taskId = response.getData().getTaskId();
-        log.info("[TripoAI] Tarea creada: {}", taskId);
+        log.info("[TripoAI] Tarea creada exitosamente: {}", taskId);
         return taskId;
     }
 
@@ -87,7 +92,7 @@ public class TripoClient {
 
     private WebClient buildClient() {
         return webClientBuilder
-                .baseUrl(BASE_URL)
+                .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
@@ -125,21 +130,48 @@ public class TripoClient {
         private String status;   // queued | running | success | failed
         private int    progress;
         private String message;
-        private Result result;
 
+        private TripoOutput output;
+        private Result result;
+        private String url;
+
+        @Data @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class TripoOutput {
+            @JsonProperty("pbr_model")
+            private String pbrModel;
+
+            @JsonProperty("model_url")
+            private String modelUrl;
+
+            private String url;
+        }
         @Data @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Result {
             private ModelFile model;
 
-            @Data @JsonIgnoreProperties(ignoreUnknown = true)
+            @Data
+            @JsonIgnoreProperties(ignoreUnknown = true)
             public static class ModelFile {
                 private String url;
             }
         }
-
         public String getModelUrl() {
-            if (result == null || result.getModel() == null) return null;
-            return result.getModel().getUrl();
+            // Intento 1: output.pbr_model (el campo real de la API)
+            if (output != null) {
+                if (output.getPbrModel() != null && !output.getPbrModel().isBlank()) return output.getPbrModel();
+                if (output.getModelUrl() != null && !output.getModelUrl().isBlank()) return output.getModelUrl();
+                if (output.getUrl() != null && !output.getUrl().isBlank()) return output.getUrl();
+            }
+
+            // Intento 2: result.pbr_model.url
+            if (result != null && result.getModel() != null) {
+                if (result.getModel().getUrl() != null && !result.getModel().getUrl().isBlank()) return result.getModel().getUrl();
+            }
+
+            // Intento 3: raíz
+            if (this.url != null && !this.url.isBlank()) return this.url;
+
+            return null;
         }
     }
 }
