@@ -12,4 +12,8 @@ public interface StorageService {
 
     // Elimina el archivo de la DB si el proyecto se borra.
     void deleteFile(String fileUrl);
+
+    // Para AI de generación 2D.
+    String uploadGeneratedImage(byte[] file, String path, String fileName);
+
 }
