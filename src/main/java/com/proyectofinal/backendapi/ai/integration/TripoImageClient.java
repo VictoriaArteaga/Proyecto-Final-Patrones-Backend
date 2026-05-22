@@ -29,18 +29,39 @@ public class TripoImageClient {
     }
 
     // FASE 1: Generación de la imagen apartir de la imagen inicial y texto.
-    public byte[] generateInitialImage(String prompt) {
+    public byte[] generateInitialImage(String prompt, String initialImageUrl) {
 
         validateConfig();
 
-        log.info("[Tripo] Iniciando generación inicial (text_to_image)");
+        if (initialImageUrl == null || initialImageUrl.isBlank()) {
+            throw new AiGenerationException("Se requiere una URL de imagen inicial para el primer render avanzado.");
+        }
+
+        log.info("[Tripo] Iniciando generación avanzada en primer render (generate_image)");
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("type", "text_to_image");
+
+        // 1. Cambiamos el tipo al formato avanzado de la documentación
+        requestBody.put("type", "generate_image");
         requestBody.put("prompt", prompt);
 
-        String taskId = submitTask(requestBody);
+        // 2. Definimos el modelo. Usamos uno compatible con imágenes según tu doc (ej: nano banana 2)
+        requestBody.put("model_version", "gemini_3.1_flash_image_preview");
 
+        // 3. Identificamos el tipo de archivo (PNG o JPEG)
+        String fileType = initialImageUrl.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+
+        // 4. Estructuramos el objeto de la imagen dentro de la lista 'files'
+        Map<String, Object> fileParam = new HashMap<>();
+        fileParam.put("type", fileType);
+        fileParam.put("url", initialImageUrl);
+
+        requestBody.put("files", List.of(fileParam));
+
+        log.info("[Tripo JSON FASE 1] {}", requestBody);
+
+        // 5. Enviamos la tarea y esperamos el render
+        String taskId = submitTask(requestBody);
         String resultImageUrl = pollForTaskResult(taskId);
 
         return downloadImageBytes(resultImageUrl);
