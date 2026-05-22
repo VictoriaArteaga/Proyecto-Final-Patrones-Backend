@@ -5,7 +5,6 @@ import com.proyectofinal.backendapi.exception.InvalidStateException;
 import com.proyectofinal.backendapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -160,6 +159,49 @@ public class SupabaseStorageService implements StorageService{
         } catch (Exception e) {
             logger.error("Error al eliminar el archivo: {}", e.getMessage());
             throw new InvalidStateException("No se pudo eliminar el archivo.");
+        }
+    }
+
+    // Para render AI 2D.
+    @Override
+    public String uploadGeneratedImage(byte[] file, String path, String fileName) {
+
+        String finalName = path + "/" + System.currentTimeMillis() + "_" + fileName;
+
+        String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
+                supabaseConfig.getUrl(),
+                supabaseConfig.getBucket(),
+                finalName
+        );
+
+        try {
+
+            webClient.post()
+                    .uri(uploadUrl)
+                    .header("Authorization", "Bearer " + supabaseConfig.getKey())
+                    .header("apiKey", supabaseConfig.getKey())
+                    .contentType(MediaType.IMAGE_PNG)
+                    .bodyValue(file)
+                    .retrieve()
+                    .onStatus(status -> !status.is2xxSuccessful(), response ->
+                            response.bodyToMono(String.class)
+                                    .flatMap(body -> {
+                                        logger.error("Error de carga IA: {}", body);
+                                        return Mono.error(new BadRequestException("Error al subir imagen IA"));
+                                    })
+                    )
+                    .bodyToMono(String.class)
+                    .block();
+
+            return String.format("%s/storage/v1/object/public/%s/%s",
+                    supabaseConfig.getUrl(),
+                    supabaseConfig.getBucket(),
+                    finalName
+            );
+
+        } catch (Exception e) {
+            logger.error("Error al subir imagen generada: {}", e.getMessage());
+            throw new InvalidStateException("No se pudo subir la imagen generada.");
         }
     }
 

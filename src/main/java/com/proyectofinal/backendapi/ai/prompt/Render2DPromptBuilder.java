@@ -4,158 +4,162 @@ import com.proyectofinal.backendapi.model.Project;
 import com.proyectofinal.backendapi.model.ProjectParameters;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import java.text.Normalizer;
+import java.util.List;
 
 @Component
-public class Render2DPromptBuilder implements PromptBuilder{
+public class Render2DPromptBuilder implements PromptBuilder {
+
+    private static final String BASE_STYLE =
+            "photorealistic architectural concept render, modern architecture, professional lighting, "
+                    + "high detail, ultra realistic, 8k, daylight, soft shadows";
 
     @Override
-    public String buildInitialPrompt(Project project) {
-
-        ProjectParameters params = project.getParameters();
-        StringBuilder prompt = new StringBuilder();
-
-        // Contexto general.
-        appendBaseContext(prompt, project);
-
-        if (params != null) {
-            appendProjectParameters(prompt, params);
-        }
-        else {
-            prompt.append("""
-                
-                Structure: single family residential house
-                Style: minimalist architecture
-                Context: integrated with the landscape
-                """
-            );
-        }
-
-        // Calidad base del prompt.
-        appendBaseQuality(prompt);
-
-        return prompt.toString();
+    public String buildInitialPrompt(Project project, String userDescription) {
+        return new PromptInternalBuilder()
+                .base("Architectural 2D concept render based on a real photograph.")
+                .projectContext(project.getName())
+                .userDescription(userDescription)
+                .style(BASE_STYLE)
+                .build();
     }
 
     @Override
     public String buildParameterizedPrompt(Project project,
-                                           Map<String, Object> parameters) {
+                                           ProjectParameters parameters,
+                                           String userDescription) {
 
-        ProjectParameters params = project.getParameters();
-        StringBuilder prompt = new StringBuilder();
+        PromptInternalBuilder builder = new PromptInternalBuilder()
+                .base("Architectural 2D concept render of a structure placed on a real photograph.")
+                .projectContext(project.getName());
 
-        // Contexto general.
-        appendBaseContext(prompt, project);
-
-        if (params != null) {
-            appendProjectParameters(prompt, params);
+        if (parameters != null) {
+            builder
+                    .dimensions(parameters.getLotWidth(), parameters.getLotLength(), parameters.getTotalArea())
+                    .constructionType(parameters.getConstructionType())
+                    .color(parameters.getColor())
+                    .floors(parameters.getNumberOfFloors())
+                    .rooms(parameters.getNumberOfRooms(), parameters.getNumberOfBathrooms())
+                    .additionalElements(parameters.getAdditionalElements())
+                    .detailDescription(parameters.getDetailDescription());
         }
 
-        appendDynamicParameters(prompt, parameters);
-
-        appendAdvancedQuality(prompt);
-
-        return prompt.toString();
-
+        return builder
+                .userDescription(userDescription)
+                .style(BASE_STYLE)
+                .build();
     }
 
-    // transformación de los datos a texto.
-    private void appendProjectParameters(StringBuilder prompt, ProjectParameters params) {
+    // Builder interno: acumula fragmentos, limpia Unicode y recorta a 1024 caracteres.
+    private static class PromptInternalBuilder {
 
-        if (params.getLotWidth() != null && params.getLotLength() != null) {
-            prompt.append("Lot size: ")
-                    .append(params.getLotWidth()).append("m x ")
-                    .append(params.getLotLength()).append("m\n");
+        private final StringBuilder prompt = new StringBuilder();
+
+        PromptInternalBuilder base(String value) {
+            return append(value);
         }
 
-        if (params.getTotalArea() != null) {
-            prompt.append("Total area: ")
-                    .append(params.getTotalArea()).append(" m2\n");
-        }
-
-        if (params.getConstructionType() != null ) {
-            prompt.append("Construction type: ")
-                    .append(params.getConstructionType()).append("\n");
-        }
-
-        if (params.getColor() != null) {
-            prompt.append("Main color: ")
-                    .append(params.getColor()).append("\n");
-        }
-
-        if (params.getNumberOfFloors() != null) {
-            prompt.append("Floors: ")
-                    .append(params.getNumberOfFloors()).append("\n");
-        }
-
-        if (params.getNumberOfRooms() != null) {
-            prompt.append("Rooms: ")
-                    .append(params.getNumberOfRooms()).append("\n");
-        }
-
-        if (params.getNumberOfBathrooms() != null) {
-            prompt.append("Bathrooms: ")
-                    .append(params.getNumberOfBathrooms()).append("\n");
-        }
-
-        if (params.getAdditionalElements() != null && !params.getAdditionalElements().isEmpty()) {
-            String elements = String.join(", ", params.getAdditionalElements());
-            prompt.append("Additional elements: ")
-                    .append(elements).append("\n");
-        }
-
-        if (params.getDetailDescription() != null) {
-            prompt.append("Description: ")
-                    .append(params.getDetailDescription()).append("\n");
-        }
-    }
-
-
-    // PARÁMETROS DINÁMICOS.
-    private void appendDynamicParameters(StringBuilder prompt, Map<String, Object> parameters) {
-        if (parameters == null || parameters.isEmpty()) return;
-
-        parameters.forEach((key, value) -> {
-            if (value != null && !value.toString().isBlank()) {
-                prompt.append(capitalize(key))
-                        .append(": ")
-                        .append(value)
-                        .append("\n");
+        PromptInternalBuilder projectContext(String projectName) {
+            if (isNotBlank(projectName)) {
+                append("Project name: " + projectName + ".");
             }
-        });
+            return this;
+        }
+
+        PromptInternalBuilder userDescription(String description) {
+            if (isNotBlank(description)) {
+                append("User description: " + description.trim() + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder dimensions(Double width, Double length, Double area) {
+            if (width != null && length != null) {
+                append(String.format("Lot dimensions: %.2f m x %.2f m.", width, length));
+            }
+            if (area != null) {
+                append(String.format("Total area: %.2f square meters.", area));
+            }
+            return this;
+        }
+
+        PromptInternalBuilder constructionType(String type) {
+            if (isNotBlank(type)) {
+                append("Construction type: " + type + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder color(String color) {
+            if (isNotBlank(color)) {
+                append("Predominant color: " + color + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder floors(Integer floors) {
+            if (floors != null && floors > 0) {
+                append("Number of floors: " + floors + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder rooms(Integer rooms, Integer bathrooms) {
+            if (rooms != null && rooms > 0) {
+                append("Number of rooms: " + rooms + ".");
+            }
+            if (bathrooms != null && bathrooms > 0) {
+                append("Number of bathrooms: " + bathrooms + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder additionalElements(List<String> elements) {
+            if (elements != null && !elements.isEmpty()) {
+                append("Additional elements: " + String.join(", ", elements) + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder detailDescription(String detail) {
+            if (isNotBlank(detail)) {
+                append("Extra details: " + detail.trim() + ".");
+            }
+            return this;
+        }
+
+        PromptInternalBuilder style(String style) {
+            return append("Style: " + style + ".");
+        }
+
+        String build() {
+            String rawPrompt = prompt.toString().trim();
+
+            // 1. Remover acentos y diacríticos.
+            String normalized = Normalizer.normalize(rawPrompt, Normalizer.Form.NFD);
+            normalized = normalized.replaceAll("\\p{M}", "");
+
+            // 2. Filtrar emojis y caracteres Unicode especiales.
+            String sanitized = normalized.replaceAll("[^\\p{L}\\p{N}\\s.,;:\\-_()'\"]", "").trim();
+
+            // 3. Controlar la restricción estricta de 1024 caracteres de Tripo.
+            if (sanitized.length() > 1024) {
+                return sanitized.substring(0, 1024);
+            }
+
+            return sanitized;
+        }
+
+        private PromptInternalBuilder append(String text) {
+            if (prompt.length() > 0) {
+                prompt.append(' ');
+            }
+            prompt.append(text);
+            return this;
+        }
+
+        private static boolean isNotBlank(String value) {
+            return value != null && !value.isBlank();
+        }
     }
-
-    // CALIDAD BASE
-    private void appendBaseQuality(StringBuilder prompt) {
-        prompt.append("""
-                
-                Style: modern architectural visualization
-                Lighting: natural light, soft shadows
-                Rendering: physically based rendering
-                Quality: ultra realistic, 4k, high detail
-                """);
-    }
-
-    // CALIDAD AVANZADA
-    private void appendAdvancedQuality(StringBuilder prompt) {
-        prompt.append("""
-                
-                Style: modern architectural visualization
-                Lighting: cinematic lighting, realistic shadows
-                Rendering: physically based rendering, global illumination
-                Quality: ultra realistic, 4k, high detail, sharp focus
-                """);
-    }
-
-
-    private String capitalize(String text) {
-        if (text == null || text.isEmpty()) return text;
-        return text.substring(0,1).toUpperCase() + text.substring(1).toLowerCase();
-    }
-
-    private void appendBaseContext(StringBuilder prompt, Project project) {
-        prompt.append("High-quality architectural 2D render.\n\n");
-        prompt.append("Project: ").append(project.getName()).append("\n");
-    }
-
 }

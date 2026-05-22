@@ -45,6 +45,10 @@ public class Project {
     @Column(length = 1000)
     private String model3DUrl; // Render del modelo 3D.
 
+    // ID de la imagen del terreno subida a PixVerse (cache para evitar re-subidas).
+    @Column(name = "pixverse_img_id")
+    private Long pixverseImgId;
+
     // Al borrar el proyecto se Borran los parámetros.
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "parameters_id")
