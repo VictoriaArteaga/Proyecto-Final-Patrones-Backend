@@ -141,6 +141,17 @@ public class ProjectController {
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 
+    // 6b. DETENER LA GENERACIÓN 3D.
+    @PostMapping("/{id}/cancel-3d")
+    public ResponseEntity<ProjectResponseDTO> cancel3D(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user
+    ) {
+
+        Project project = projectService.cancel3D(id, user);
+        return ResponseEntity.ok(ProjectMapper.toDTO(project));
+    }
+
     // 7. OBTENER DETALLE DEL PROYECTO POR ID.
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponseDTO> getProject(
