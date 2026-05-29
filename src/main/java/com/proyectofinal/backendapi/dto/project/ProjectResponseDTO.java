@@ -17,6 +17,7 @@ public class ProjectResponseDTO {
     private String status;
     private DesignCategory category;
 
+    private String imageOriginalUrl;
     private String image2DUrl;
     private String model3DUrl;
 

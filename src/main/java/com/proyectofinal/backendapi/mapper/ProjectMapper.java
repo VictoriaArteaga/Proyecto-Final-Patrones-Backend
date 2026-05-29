@@ -39,6 +39,7 @@ public class ProjectMapper {
                 .name(project.getName())
                 .status(project.getStatus().name())
                 .category(project.getCategory())
+                .imageOriginalUrl(project.getImageOriginalUrl())
                 .image2DUrl(project.getImage2DUrl())
                 .model3DUrl(project.getModel3DUrl())
                 .createdAt(project.getCreatedAt())

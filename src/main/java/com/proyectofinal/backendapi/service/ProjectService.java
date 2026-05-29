@@ -6,12 +6,19 @@ import com.proyectofinal.backendapi.model.Project;
 import com.proyectofinal.backendapi.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ProjectService {
 
     // Crear el proyecto con la imagen inicial y la categoría de diseño.
     Project createProjectWithImage(MultipartFile file, User user, String name, DesignCategory category);
+
+    // Listar todos los proyectos del usuario (más recientes primero).
+    List<Project> getUserProjects(User user);
+
+    // Eliminar (borrado lógico) un proyecto del usuario.
+    void deleteProject(UUID id, User user);
 
     // Obtener un proyecto validando que el usuario sea el dueño.
     Project getProjectById(UUID id, User user);
