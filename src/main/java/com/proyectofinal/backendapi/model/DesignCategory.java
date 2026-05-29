@@ -7,9 +7,6 @@ public enum DesignCategory {
     // Casas, edificios o estructuras sobre un terreno (flujo original).
     EXTERIOR_ARCHITECTURE,
 
-    // Rediseño de un espacio interior completo (sala, cuarto, cocina).
-    INTERIOR_ROOM,
-
     // Inserción de un mueble u objeto puntual en una foto.
     FURNITURE_ITEM
 }

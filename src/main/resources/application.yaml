@@ -1,4 +1,7 @@
 server:
+  # Honra X-Forwarded-Proto/Host del proxy de Render: así request.isSecure()
+  # es true en producción → se emite HSTS y se reconoce el contexto HTTPS.
+  forward-headers-strategy: framework
   tomcat:
     connection-timeout: 600000  # 10 minutos para conexiones Tomcat
 

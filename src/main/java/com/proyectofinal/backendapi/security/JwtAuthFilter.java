@@ -4,6 +4,7 @@ import com.proyectofinal.backendapi.model.User;
 import com.proyectofinal.backendapi.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,15 +35,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        // El token viaja en una cookie HttpOnly; como respaldo aceptamos también
+        // la cabecera Authorization: Bearer (útil para herramientas/Postman).
+        String token = resolveToken(request);
 
         // Si no hay token, continuar sin autenticar
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(7); // quitar "Bearer "
 
         if (jwtService.isTokenValid(token)) {
             String email = jwtService.extractEmail(token);
@@ -58,5 +59,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    // Obtiene el JWT: primero de la cookie HttpOnly, luego de la cabecera Bearer.
+    private String resolveToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (AuthCookieFactory.COOKIE_NAME.equals(cookie.getName())
+                        && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        return null;
     }
 }

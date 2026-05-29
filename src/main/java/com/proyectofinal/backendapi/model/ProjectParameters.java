@@ -43,10 +43,7 @@ public class ProjectParameters {
     @Column
     private String detailDescription;
 
-    // --- Campos para INTERIOR_ROOM y FURNITURE_ITEM (todos opcionales) ---
-
-    // Tipo de habitación: sala, cuarto, cocina, baño, comedor...
-    private String roomType;
+    // --- Campos para FURNITURE_ITEM (todos opcionales) ---
 
     // Tipo de mueble u objeto: estantería, sofá, mesa, lámpara...
     private String furnitureType;

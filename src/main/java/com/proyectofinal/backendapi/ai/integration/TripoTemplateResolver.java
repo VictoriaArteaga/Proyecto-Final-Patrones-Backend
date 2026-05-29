@@ -18,9 +18,6 @@ public class TripoTemplateResolver {
 
         switch (project.getCategory()) {
             case EXTERIOR_ARCHITECTURE -> applyExterior(tripoParams, parameters);
-            case INTERIOR_ROOM -> {
-                // Sin template: flux.1_kontext_pro maneja la edición de la escena con el prompt.
-            }
             case FURNITURE_ITEM -> tripoParams.put("template", "asset_extraction");
         }
     }
