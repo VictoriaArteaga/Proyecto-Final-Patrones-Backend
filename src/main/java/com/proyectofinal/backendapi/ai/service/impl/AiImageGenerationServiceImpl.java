@@ -62,11 +62,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             initialParams.put("model_version", "flux.1_kontext_pro");
 
             if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
-
-                // Pasamos la URL bajo la key "url", TripoImageClient la envuelve correctamente en { "file": { "type": "jpeg/png", "url": "..." } }.
-                initialParams.put("url", project.getImageOriginalUrl());
-                log.info("[Tripo Service] Imagen base del proyecto será enviada como referencia: {}",
-                        project.getImageOriginalUrl());
+                String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+                initialParams.put("url", safeUrl);
+                log.info("[Tripo Service] Imagen base del proyecto será enviada como referencia: {}", safeUrl);
             }
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, initialParams);
@@ -114,7 +112,8 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             advancedParams.put("model_version", "flux.1_kontext_pro");
 
             if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
-                advancedParams.put("url", project.getImageOriginalUrl());
+                String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+                advancedParams.put("url", safeUrl);
             }
 
             // Mapeo categoría → templates/flags de Tripo (delegado al resolver).
