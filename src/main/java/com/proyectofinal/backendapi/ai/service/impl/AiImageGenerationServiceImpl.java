@@ -64,9 +64,10 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
 
                 // Pasamos la URL bajo la key "url", TripoImageClient la envuelve correctamente en { "file": { "type": "jpeg/png", "url": "..." } }.
-                initialParams.put("url", project.getImageOriginalUrl());
+                String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+                initialParams.put("url", safeUrl);
                 log.info("[Tripo Service] Imagen base del proyecto será enviada como referencia: {}",
-                        project.getImageOriginalUrl());
+                        safeUrl);
             }
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, initialParams);
@@ -118,7 +119,8 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
                 throw new AiGenerationException(
                         "El proyecto no tiene imagen original; no se puede regenerar.");
             }
-            advancedParams.put("url", project.getImageOriginalUrl());
+            String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+            advancedParams.put("url", safeUrl);
 
             // Nota: NO aplicamos templates de Tripo (3d_enhance / asset_extraction):
             // esos pipelines pueden ignorar/transformar la foto base. Así la regeneración
