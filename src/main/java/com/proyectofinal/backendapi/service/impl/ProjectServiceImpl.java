@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -65,6 +66,24 @@ public class ProjectServiceImpl implements ProjectService {
         // Uso de excepción personalizada.
         return projectRepository.findByIdAndUser(id, user)
                 .orElseThrow(ProjectNotFoundException::new);
+    }
+
+    // 2b. LISTAR PROYECTOS DEL USUARIO (más recientes primero, sin eliminados).
+    @Override
+    public List<Project> getUserProjects(User user) {
+        return projectRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .filter(p -> p.getStatus() != ProjectState.DELETED)
+                .toList();
+    }
+
+    // 2c. ELIMINAR PROYECTO (borrado real, incluye versiones y parámetros por cascada).
+    @Override
+    @Transactional
+    public void deleteProject(UUID projectId, User user) {
+        Project project = getProjectById(projectId, user);
+        logger.info("El usuario {} eliminó el proyecto {}.", user.getId(), projectId);
+        projectRepository.delete(project);
     }
 
     // VALIDACIÓN DE ESTADO.

@@ -82,6 +82,8 @@ public class GlobalExceptionHandler {
     // Fallback - cualquier error no controlado.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleGeneric(Exception ex) {
+        // Registramos la causa real para poder diagnosticar los 500.
+        log.error("Error interno no controlado: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponseDTO.builder()
                         .message("Error interno del servidor")

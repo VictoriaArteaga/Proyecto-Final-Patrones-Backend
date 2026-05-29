@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,6 +41,31 @@ public class ProjectController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ProjectMapper.toDTO(project));
+    }
+
+    // 1b. LISTAR PROYECTOS DEL USUARIO.
+    @GetMapping
+    public ResponseEntity<List<ProjectResponseDTO>> getUserProjects(
+            @AuthenticationPrincipal User user
+    ) {
+
+        List<ProjectResponseDTO> projects = projectService.getUserProjects(user)
+                .stream()
+                .map(ProjectMapper::toDTO)
+                .toList();
+
+        return ResponseEntity.ok(projects);
+    }
+
+    // 1c. ELIMINAR PROYECTO.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user
+    ) {
+
+        projectService.deleteProject(id, user);
+        return ResponseEntity.noContent().build();
     }
 
     // 2. GENERAR RENDER 2D.
