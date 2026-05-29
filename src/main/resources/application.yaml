@@ -10,11 +10,6 @@ spring:
     async:
       request-timeout: 600000   # 10 minutos para peticiones asíncronas
 
-  servlet:
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
-
   mail:
     host: smtp.gmail.com
     port: 587
@@ -52,8 +47,8 @@ spring:
 supabase:
   url: ${SUPABASE_URL}
   key: ${SUPABASE_KEY}
-  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
   bucket: ${SUPABASE_BUCKET}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -66,4 +61,3 @@ app:
 tripo:
   api-key: ${TRIPO_API_KEY}
   base-url: https://api.tripo3d.ai/v2/openapi
-
