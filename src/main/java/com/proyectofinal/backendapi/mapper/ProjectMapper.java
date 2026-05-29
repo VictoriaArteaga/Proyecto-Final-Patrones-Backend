@@ -22,12 +22,23 @@ public class ProjectMapper {
             params.setNumberOfBathrooms(project.getParameters().getNumberOfBathrooms());
             params.setAdditionalElements(project.getParameters().getAdditionalElements());
             params.setDetailDescription(project.getParameters().getDetailDescription());
+
+            // Campos de interior / mueble.
+            params.setRoomType(project.getParameters().getRoomType());
+            params.setFurnitureType(project.getParameters().getFurnitureType());
+            params.setFurnitureWidthCm(project.getParameters().getFurnitureWidthCm());
+            params.setFurnitureHeightCm(project.getParameters().getFurnitureHeightCm());
+            params.setFurnitureDepthCm(project.getParameters().getFurnitureDepthCm());
+            params.setMaterials(project.getParameters().getMaterials());
+            params.setStyleTrend(project.getParameters().getStyleTrend());
+            params.setPlacement(project.getParameters().getPlacement());
         }
 
         return ProjectResponseDTO.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .status(project.getStatus().name())
+                .category(project.getCategory())
                 .image2DUrl(project.getImage2DUrl())
                 .model3DUrl(project.getModel3DUrl())
                 .createdAt(project.getCreatedAt())

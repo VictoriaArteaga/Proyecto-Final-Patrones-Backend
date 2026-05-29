@@ -42,6 +42,28 @@ public class ProjectParameters {
     @Column
     private String detailDescription;
 
+    // --- Campos para INTERIOR_ROOM y FURNITURE_ITEM (todos opcionales) ---
+
+    // Tipo de habitación: sala, cuarto, cocina, baño, comedor...
+    private String roomType;
+
+    // Tipo de mueble u objeto: estantería, sofá, mesa, lámpara...
+    private String furnitureType;
+
+    // Dimensiones del mueble en centímetros.
+    private Double furnitureWidthCm;
+    private Double furnitureHeightCm;
+    private Double furnitureDepthCm;
+
+    // Materiales principales: madera, metal, vidrio, tela...
+    private String materials;
+
+    // Estilo o tendencia: escandinavo, industrial, minimalista, rústico...
+    private String styleTrend;
+
+    // Ubicación dentro de la habitación: contra la pared norte, junto a la ventana...
+    private String placement;
+
     // Establece que estos parámetros pertenecen a un solo proyecto.
     @OneToOne(mappedBy = "parameters") // Relación "dueña" está en la clase.
     private Project project;

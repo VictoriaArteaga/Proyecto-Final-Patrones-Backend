@@ -1,6 +1,7 @@
 package com.proyectofinal.backendapi.service;
 
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
+import com.proyectofinal.backendapi.model.DesignCategory;
 import com.proyectofinal.backendapi.model.Project;
 import com.proyectofinal.backendapi.model.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,8 +10,8 @@ import java.util.UUID;
 
 public interface ProjectService {
 
-    // Crear el proyecto con la imagen inicial del terreno.
-    Project createProjectWithImage(MultipartFile file, User user, String name);
+    // Crear el proyecto con la imagen inicial y la categoría de diseño.
+    Project createProjectWithImage(MultipartFile file, User user, String name, DesignCategory category);
 
     // Obtener un proyecto validando que el usuario sea el dueño.
     Project getProjectById(UUID id, User user);

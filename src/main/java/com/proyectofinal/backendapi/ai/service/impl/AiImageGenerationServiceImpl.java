@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyectofinal.backendapi.ai.dto.GenerateRenderResponseDTO;
 import com.proyectofinal.backendapi.ai.integration.AiGenerationException;
 import com.proyectofinal.backendapi.ai.integration.TripoImageClient;
+import com.proyectofinal.backendapi.ai.integration.TripoTemplateResolver;
 import com.proyectofinal.backendapi.ai.mapper.AiMapper;
 import com.proyectofinal.backendapi.ai.prompt.PromptBuilder;
+import com.proyectofinal.backendapi.ai.prompt.PromptBuilderFactory;
 import com.proyectofinal.backendapi.ai.service.AiImageGenerationService;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
@@ -31,8 +33,9 @@ import java.util.UUID;
 public class AiImageGenerationServiceImpl implements AiImageGenerationService {
 
     private final ProjectRepository projectRepository;
-    private final PromptBuilder promptBuilder;
+    private final PromptBuilderFactory promptBuilderFactory;
     private final TripoImageClient tripoImageClient;
+    private final TripoTemplateResolver tripoTemplateResolver;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
 
@@ -50,8 +53,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
         projectRepository.save(project);
 
         try {
+            PromptBuilder promptBuilder = promptBuilderFactory.forCategory(project.getCategory());
             String prompt = promptBuilder.buildInitialPrompt(project, userDescription);
-            log.debug("[Tripo Service] Prompt inicial: {}", prompt);
+            log.debug("[Tripo Service] Prompt inicial ({}): {}", project.getCategory(), prompt);
 
             Map<String, Object> initialParams = new HashMap<>();
             //  flux.1_kontext_pro soporta imagen de referencia (flux.1_dev NO la soporta).
@@ -101,8 +105,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
 
         try {
             ProjectParameters paramsToUse = resolveParameters(project, incomingParameters);
+            PromptBuilder promptBuilder = promptBuilderFactory.forCategory(project.getCategory());
             String prompt = promptBuilder.buildParameterizedPrompt(project, paramsToUse, userDescription);
-            log.debug("[Tripo Service] Prompt parametrizado: {}", prompt);
+            log.debug("[Tripo Service] Prompt parametrizado ({}): {}", project.getCategory(), prompt);
 
             Map<String, Object> advancedParams = new HashMap<>();
             // flux.1_kontext_pro soporta imagen de referencia.
@@ -112,18 +117,8 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
                 advancedParams.put("url", project.getImageOriginalUrl());
             }
 
-            // Mapeo de parámetros del proyecto hacia templates de Tripo.
-            if (paramsToUse.getConstructionType() != null) {
-                String type = paramsToUse.getConstructionType().toLowerCase();
-                if (type.contains("boceto") || type.contains("sketch")) {
-                    advancedParams.put("sketch_to_render", true);
-                } else if (type.contains("mueble") || type.contains("estanteria")
-                        || type.contains("objeto")) {
-                    advancedParams.put("template", "asset_extraction");
-                } else {
-                    advancedParams.put("template", "3d_enhance");
-                }
-            }
+            // Mapeo categoría → templates/flags de Tripo (delegado al resolver).
+            tripoTemplateResolver.apply(advancedParams, project, paramsToUse);
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, advancedParams);
 
