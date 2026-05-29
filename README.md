@@ -1,4 +1,4 @@
-# 🏛️ Proyecto Final — Backend API
+# Proyecto Final — Backend API
 
 > Plataforma backend para la **generación asistida por IA de diseños arquitectónicos y mobiliario**, que transforma una fotografía de un terreno o espacio en un render 2D realista y, finalmente, en un **modelo 3D navegable**.
 
@@ -13,7 +13,7 @@
 
 ---
 
-## 📑 Tabla de contenidos
+## Tabla de contenidos
 
 - [Descripción del proyecto](#-descripción-del-proyecto)
 - [¿Para quién va dirigido?](#-para-quién-va-dirigido)
@@ -33,7 +33,7 @@
 
 ---
 
-## 📖 Descripción del proyecto
+## Descripción del proyecto
 
 **Backend API** es el núcleo de servicios de una plataforma de diseño asistido por inteligencia artificial. Su objetivo es acompañar al usuario en un flujo completo y guiado de creación de diseños:
 
@@ -49,35 +49,35 @@ Este proyecto se desarrolló como **proyecto final de la asignatura Patrones y E
 
 ---
 
-## 🎯 ¿Para quién va dirigido?
+## ¿Para quién va dirigido?
 
 | Audiencia | Uso |
 |-----------|-----|
-| 👩‍🎨 **Diseñadores de interiores y arquitectos** | Prototipar rápidamente ideas de diseño a partir de fotos reales, sin necesidad de software CAD avanzado. |
-| 🏠 **Propietarios y clientes finales** | Visualizar cómo quedaría una construcción o un mueble en su espacio antes de invertir. |
-| 🧑‍💻 **Equipos de desarrollo / frontend** | Consumir una API REST documentada para construir aplicaciones web o móviles de diseño. |
-| 🎓 **Estudiantes y docentes** | Estudiar una implementación real y bien estructurada de patrones de diseño aplicados sobre Spring Boot. |
+| **Diseñadores de interiores y arquitectos** | Prototipar rápidamente ideas de diseño a partir de fotos reales, sin necesidad de software CAD avanzado. |
+| **Propietarios y clientes finales** | Visualizar cómo quedaría una construcción o un mueble en su espacio antes de invertir. |
+| **Equipos de desarrollo / frontend** | Consumir una API REST documentada para construir aplicaciones web o móviles de diseño. |
+| **Estudiantes y docentes** | Estudiar una implementación real y bien estructurada de patrones de diseño aplicados sobre Spring Boot. |
 
 ---
 
-## ✨ Características principales
+## Características principales
 
-- 🔐 **Autenticación y autorización** con JWT en cookies `HttpOnly`, registro, login y logout.
-- 🛡️ **Autenticación de dos factores (2FA)** vía código enviado por correo.
-- 🔑 **Recuperación de contraseña** mediante token temporal y correo de recuperación.
-- 🖼️ **Generación de renders 2D** a partir de una imagen y parámetros de diseño.
-- 🧊 **Generación de modelos 3D** asíncrona con polling de estado (integración TripoAI).
-- 🏗️ Dos categorías de diseño: **arquitectura exterior** y **mobiliario / objetos**.
-- 🗂️ **Gestión de proyectos** con versiones, parámetros y máquina de estados de 9 fases.
-- 🔔 **Sistema de notificaciones** por usuario.
-- 👤 **Perfil de usuario** con avatar.
-- ☁️ **Almacenamiento en la nube** de imágenes y modelos mediante Supabase Storage.
-- 📧 **Envío de correos** transaccionales (SMTP / Gmail).
-- ⚙️ Manejo **global de excepciones** y respuestas de error estandarizadas.
+- **Autenticación y autorización** con JWT en cookies `HttpOnly`, registro, login y logout.
+- **Autenticación de dos factores (2FA)** vía código enviado por correo.
+- **Recuperación de contraseña** mediante token temporal y correo de recuperación.
+- **Generación de renders 2D** a partir de una imagen y parámetros de diseño.
+- **Generación de modelos 3D** asíncrona con polling de estado (integración TripoAI).
+- Dos categorías de diseño: **arquitectura exterior** y **mobiliario / objetos**.
+- **Gestión de proyectos** con versiones, parámetros y máquina de estados de 9 fases.
+- **Sistema de notificaciones** por usuario.
+- **Perfil de usuario** con avatar.
+- **Almacenamiento en la nube** de imágenes y modelos mediante Supabase Storage.
+- **Envío de correos** transaccionales (SMTP / Gmail).
+- Manejo **global de excepciones** y respuestas de error estandarizadas.
 
 ---
 
-## 🛠️ Tecnologías utilizadas
+## Tecnologías utilizadas
 
 ### Lenguaje y framework
 - **Java 21**
@@ -113,7 +113,7 @@ Este proyecto se desarrolló como **proyecto final de la asignatura Patrones y E
 
 ---
 
-## 🏛️ Arquitectura
+## Arquitectura
 
 El proyecto sigue una **arquitectura en capas (layered architecture)** con separación clara de responsabilidades, complementada con **módulos por dominio** (`ai`, `render3d`) que encapsulan las integraciones de IA.
 
@@ -152,7 +152,7 @@ El proyecto sigue una **arquitectura en capas (layered architecture)** con separ
 
 ---
 
-## 🧩 Patrones de diseño aplicados
+## Patrones de diseño aplicados
 
 Al tratarse de un proyecto de la asignatura *Patrones y Estructuras*, el diseño aplica varios patrones GoF y arquitectónicos de forma explícita:
 
@@ -170,7 +170,7 @@ Al tratarse de un proyecto de la asignatura *Patrones y Estructuras*, el diseño
 
 ---
 
-## 🔄 Flujo del proyecto (máquina de estados)
+## Flujo del proyecto (máquina de estados)
 
 Cada proyecto avanza por una máquina de estados de **9 fases** (`ProjectState`):
 
@@ -197,11 +197,11 @@ GENERATING_2D ─────────────► WAITING_2D_APPROVAL
 
 ---
 
-## 🌐 Endpoints de la API
+## Endpoints de la API
 
 > Base path: `/api/v1` — Todas las rutas (excepto `auth`) requieren autenticación vía cookie JWT.
 
-### 🔐 Autenticación — `/api/v1/auth`
+### Autenticación — `/api/v1/auth`
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `POST` | `/register` | Registro con auto-login. |
@@ -212,7 +212,7 @@ GENERATING_2D ─────────────► WAITING_2D_APPROVAL
 | `POST` | `/forgot-password` | Solicitar recuperación de contraseña. |
 | `POST` | `/reset-password` | Confirmar nueva contraseña con token. |
 
-### 🗂️ Proyectos — `/api/v1/projects`
+### Proyectos — `/api/v1/projects`
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `POST` | `/` | Crear proyecto subiendo la imagen inicial. |
@@ -227,20 +227,20 @@ GENERATING_2D ─────────────► WAITING_2D_APPROVAL
 | `POST` | `/{id}/generate-3d` | Generar modelo 3D. |
 | `POST` | `/{id}/cancel-3d` | Cancelar la generación 3D. |
 
-### 🧊 Render 3D — `/api/render`
+### Render 3D — `/api/render`
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `POST` | `/generate-3d` | Inicia la generación 3D (respuesta inmediata, `202 Accepted`). |
 | `GET` | `/status/{taskId}` | Consulta el estado de la tarea (*polling*). |
 
-### 👤 Usuarios — `/api/v1/users`
+### Usuarios — `/api/v1/users`
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/me` | Datos del usuario autenticado. |
 | `PUT` | `/me/avatar` | Actualizar foto de perfil. |
 | `DELETE` | `/me/avatar` | Eliminar foto de perfil. |
 
-### 🔔 Notificaciones — `/api/v1/users/me/notifications`
+### Notificaciones — `/api/v1/users/me/notifications`
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/` | Listar notificaciones. |
@@ -250,7 +250,7 @@ GENERATING_2D ─────────────► WAITING_2D_APPROVAL
 
 ---
 
-## ✅ Requisitos previos
+## Requisitos previos
 
 - **Java JDK 21**
 - **Maven 3.9+** (o usar el *wrapper* incluido `mvnw` / `mvnw.cmd`)
@@ -262,7 +262,7 @@ GENERATING_2D ─────────────► WAITING_2D_APPROVAL
 
 ---
 
-## 🔑 Variables de entorno
+## Variables de entorno
 
 El proyecto carga la configuración desde un archivo `.env` en la raíz (vía `spring-dotenv`). Crea uno con las siguientes claves:
 
@@ -292,11 +292,11 @@ MAIL_PASSWORD=<app-password>
 ALLOWED_ORIGINS=http://localhost:3000,https://tu-frontend.com
 ```
 
-> ⚠️ **Nunca** subas el archivo `.env` al repositorio. Asegúrate de que esté listado en `.gitignore`.
+> **Nunca** subas el archivo `.env` al repositorio. Asegúrate de que esté listado en `.gitignore`.
 
 ---
 
-## 🚀 Instalación y ejecución
+## Instalación y ejecución
 
 ```bash
 # 1. Clonar el repositorio
@@ -326,7 +326,7 @@ java -jar target/backendapi-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 🐳 Ejecución con Docker
+## Ejecución con Docker
 
 El proyecto incluye un **Dockerfile multi-stage** (build con Maven + runtime con JDK 21):
 
@@ -340,7 +340,7 @@ docker run --env-file .env -p 8080:8080 backendapi
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 src/main/java/com/proyectofinal/backendapi/
@@ -379,7 +379,7 @@ src/main/resources/
 
 ---
 
-## 🔒 Seguridad
+## Seguridad
 
 - **Autenticación stateless con JWT** transportado en cookies `HttpOnly` (el token nunca queda expuesto a JavaScript).
 - **Contraseñas** almacenadas con hashing **BCrypt**.
@@ -392,7 +392,7 @@ src/main/resources/
 
 ---
 
-## 👩‍💻 Autores
+## Autores
 
 Proyecto desarrollado para la asignatura **Patrones y Estructuras** (Cuarto Semestre).
 
@@ -401,5 +401,5 @@ Proyecto desarrollado para la asignatura **Patrones y Estructuras** (Cuarto Seme
 ---
 
 <p align="center">
-  <sub>Construido con ❤️ usando Spring Boot · Proyecto Final — Patrones y Estructuras</sub>
+  <sub>Construido usando Spring Boot · Proyecto Final — Patrones y Estructuras</sub>
 </p>
