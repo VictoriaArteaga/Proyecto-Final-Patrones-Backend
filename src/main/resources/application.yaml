@@ -10,6 +10,11 @@ spring:
     async:
       request-timeout: 600000   # 10 minutos para peticiones asíncronas
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
   mail:
     host: smtp.gmail.com
     port: 587
