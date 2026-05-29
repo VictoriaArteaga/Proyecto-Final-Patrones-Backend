@@ -1,7 +1,9 @@
 package com.proyectofinal.backendapi.controller;
 
+import com.proyectofinal.backendapi.dto.project.Generate2DRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectRequestDTO;
+import com.proyectofinal.backendapi.dto.project.Regenerate2DRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectResponseDTO;
 import com.proyectofinal.backendapi.mapper.ProjectMapper;
 import com.proyectofinal.backendapi.model.Project;
@@ -16,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,21 +37,49 @@ public class ProjectController {
             @AuthenticationPrincipal User user
     ) {
 
-        Project project = projectService.createProjectWithImage(file, user, dto.getName());
+        Project project = projectService.createProjectWithImage(file, user, dto.getName(), dto.getCategory());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ProjectMapper.toDTO(project));
     }
 
-    // 2. GENERAR RENDER 2D.
-    @PostMapping("/{id}/generate-2d")
-    public ResponseEntity<ProjectResponseDTO> generate2D(
+    // 1b. LISTAR PROYECTOS DEL USUARIO.
+    @GetMapping
+    public ResponseEntity<List<ProjectResponseDTO>> getUserProjects(
+            @AuthenticationPrincipal User user
+    ) {
+
+        List<ProjectResponseDTO> projects = projectService.getUserProjects(user)
+                .stream()
+                .map(ProjectMapper::toDTO)
+                .toList();
+
+        return ResponseEntity.ok(projects);
+    }
+
+    // 1c. ELIMINAR PROYECTO.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user
     ) {
 
-        Project project = projectService.generateInitial2D(id, user);
+        projectService.deleteProject(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 2. GENERAR RENDER 2D.
+    @PostMapping("/{id}/generate-2d")
+    public ResponseEntity<ProjectResponseDTO> generate2D(
+            @PathVariable UUID id,
+            @RequestBody(required = false) Generate2DRequestDTO body,
+            @AuthenticationPrincipal User user
+    ) {
+
+        String description = (body != null) ? body.getDescription() : null;
+
+        Project project = projectService.generateInitial2D(id, user, description);
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 
@@ -86,6 +117,19 @@ public class ProjectController {
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 
+    // 5b. REGENERAR RENDER 2D (tras rechazo) con descripción detallada y parámetros.
+    @PostMapping("/{id}/regenerate-2d")
+    public ResponseEntity<ProjectResponseDTO> regenerate2D(
+            @PathVariable UUID id,
+            @RequestBody Regenerate2DRequestDTO body,
+            @AuthenticationPrincipal User user
+    ) {
+
+        Project project = projectService.regenerate2D(
+                id, user, body.getParameters(), body.getDescription());
+        return ResponseEntity.ok(ProjectMapper.toDTO(project));
+    }
+
     // 6. GENERAR MODELO 3D.
     @PostMapping("/{id}/generate-3d")
     public ResponseEntity<ProjectResponseDTO> generate3D(
@@ -94,6 +138,17 @@ public class ProjectController {
     ) {
 
         Project project = projectService.generate3D(id, user);
+        return ResponseEntity.ok(ProjectMapper.toDTO(project));
+    }
+
+    // 6b. DETENER LA GENERACIÓN 3D.
+    @PostMapping("/{id}/cancel-3d")
+    public ResponseEntity<ProjectResponseDTO> cancel3D(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user
+    ) {
+
+        Project project = projectService.cancel3D(id, user);
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 

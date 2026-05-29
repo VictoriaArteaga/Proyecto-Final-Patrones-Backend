@@ -27,7 +27,8 @@ public class ProjectVersion {
     private String model3DUrl;
 
     // Opcional para ver si la quitamos.
-    // Descripción detallada de lo que generó la AI.
+    // Descripción detallada de lo que generó la AI (el prompt puede ser largo).
+    @Column(columnDefinition = "TEXT")
     private String aiDescription;
 
     // Fecha y hora de la versión.

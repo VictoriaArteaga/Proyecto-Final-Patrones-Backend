@@ -26,6 +26,11 @@ public class Project {
     @Column(nullable = false)
     private ProjectState status; // los 9 estados.
 
+    // Categoría de diseño: define qué estrategia de prompt y qué template de Tripo se usan.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 40)
+    private DesignCategory category;
+
     // Usuario relacionado.
     @ManyToOne(fetch = FetchType.LAZY) // Carga los datos del usuario solo cuando se necesitan.
     @JoinColumn(name = "user_id", nullable = false)
@@ -65,6 +70,7 @@ public class Project {
     private Project(Builder builder) { // El constructor recibe a Builder.
         this.name = builder.name;
         this.status = builder.status;
+        this.category = builder.category;
         this.user = builder.user;
         this.imageOriginalUrl = builder.imageOriginalUrl;
         this.parameters = builder.parameters;
@@ -79,6 +85,7 @@ public class Project {
 
         private String name;
         private ProjectState status;
+        private DesignCategory category;
         private User user;
         private String imageOriginalUrl;
         private ProjectParameters parameters;
@@ -90,6 +97,11 @@ public class Project {
 
         public Builder status(ProjectState status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder category(DesignCategory category) {
+            this.category = category;
             return this;
         }
 
@@ -120,11 +132,14 @@ public class Project {
             if (status == null) {
                 throw new IllegalStateException("Project state is mandatory.");
             }
+            if (category == null) {
+                throw new IllegalStateException("Design category is required.");
+            }
             if (user == null) {
                 throw new IllegalStateException("A valid user is required.");
             }
             if (imageOriginalUrl == null || imageOriginalUrl.isBlank()) {
-                throw new IllegalStateException("The original terrain image is required.");
+                throw new IllegalStateException("The original reference image is required.");
             }
         }
 

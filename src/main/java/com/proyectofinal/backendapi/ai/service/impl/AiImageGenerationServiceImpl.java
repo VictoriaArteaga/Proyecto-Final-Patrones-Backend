@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyectofinal.backendapi.ai.dto.GenerateRenderResponseDTO;
 import com.proyectofinal.backendapi.ai.integration.AiGenerationException;
 import com.proyectofinal.backendapi.ai.integration.TripoImageClient;
+import com.proyectofinal.backendapi.ai.integration.TripoTemplateResolver;
 import com.proyectofinal.backendapi.ai.mapper.AiMapper;
 import com.proyectofinal.backendapi.ai.prompt.PromptBuilder;
+import com.proyectofinal.backendapi.ai.prompt.PromptBuilderFactory;
 import com.proyectofinal.backendapi.ai.service.AiImageGenerationService;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
@@ -31,16 +33,17 @@ import java.util.UUID;
 public class AiImageGenerationServiceImpl implements AiImageGenerationService {
 
     private final ProjectRepository projectRepository;
-    private final PromptBuilder promptBuilder;
+    private final PromptBuilderFactory promptBuilderFactory;
     private final TripoImageClient tripoImageClient;
+    private final TripoTemplateResolver tripoTemplateResolver;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
     public GenerateRenderResponseDTO generateInitialRender(UUID projectId,
-                                                           User user,
-                                                           String userDescription) {
+                                                                  User user,
+                                                                  String userDescription) {
 
         Project project = findProjectOrThrow(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);
@@ -50,8 +53,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
         projectRepository.save(project);
 
         try {
+            PromptBuilder promptBuilder = promptBuilderFactory.forCategory(project.getCategory());
             String prompt = promptBuilder.buildInitialPrompt(project, userDescription);
-            log.debug("[Tripo Service] Prompt inicial: {}", prompt);
+            log.debug("[Tripo Service] Prompt inicial ({}): {}", project.getCategory(), prompt);
 
             Map<String, Object> initialParams = new HashMap<>();
             //  flux.1_kontext_pro soporta imagen de referencia (flux.1_dev NO la soporta).
@@ -60,9 +64,10 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
 
                 // Pasamos la URL bajo la key "url", TripoImageClient la envuelve correctamente en { "file": { "type": "jpeg/png", "url": "..." } }.
-                initialParams.put("url", project.getImageOriginalUrl());
+                String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+                initialParams.put("url", safeUrl);
                 log.info("[Tripo Service] Imagen base del proyecto será enviada como referencia: {}",
-                        project.getImageOriginalUrl());
+                        safeUrl);
             }
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, initialParams);
@@ -101,29 +106,27 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
 
         try {
             ProjectParameters paramsToUse = resolveParameters(project, incomingParameters);
+            PromptBuilder promptBuilder = promptBuilderFactory.forCategory(project.getCategory());
             String prompt = promptBuilder.buildParameterizedPrompt(project, paramsToUse, userDescription);
-            log.debug("[Tripo Service] Prompt parametrizado: {}", prompt);
+            log.debug("[Tripo Service] Prompt parametrizado ({}): {}", project.getCategory(), prompt);
 
             Map<String, Object> advancedParams = new HashMap<>();
             // flux.1_kontext_pro soporta imagen de referencia.
             advancedParams.put("model_version", "flux.1_kontext_pro");
 
-            if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
-                advancedParams.put("url", project.getImageOriginalUrl());
+            // OBLIGATORIO: toda generación parte de la imagen ORIGINAL del usuario.
+            if (project.getImageOriginalUrl() == null || project.getImageOriginalUrl().isBlank()) {
+                throw new AiGenerationException(
+                        "El proyecto no tiene imagen original; no se puede regenerar.");
             }
+            String safeUrl = project.getImageOriginalUrl().replace(" ", "%20");
+            advancedParams.put("url", safeUrl);
 
-            // Mapeo de parámetros del proyecto hacia templates de Tripo.
-            if (paramsToUse.getConstructionType() != null) {
-                String type = paramsToUse.getConstructionType().toLowerCase();
-                if (type.contains("boceto") || type.contains("sketch")) {
-                    advancedParams.put("sketch_to_render", true);
-                } else if (type.contains("mueble") || type.contains("estanteria")
-                        || type.contains("objeto")) {
-                    advancedParams.put("template", "asset_extraction");
-                } else {
-                    advancedParams.put("template", "3d_enhance");
-                }
-            }
+            // Nota: NO aplicamos templates de Tripo (3d_enhance / asset_extraction):
+            // esos pipelines pueden ignorar/transformar la foto base. Así la regeneración
+            // edita la imagen original del usuario igual que el render inicial; los
+            // parámetros entran por el prompt.
+            // tripoTemplateResolver.apply(advancedParams, project, paramsToUse);
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, advancedParams);
 
@@ -186,10 +189,16 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             project.setVersions(versions);
         }
 
+        // Recortamos el prompt por seguridad: si la columna ai_description sigue
+        // siendo varchar(255) en la BD, evita el error "value too long".
+        String safePrompt = (prompt != null && prompt.length() > 250)
+                ? prompt.substring(0, 250)
+                : prompt;
+
         ProjectVersion version = ProjectVersion.builder()
                 .versionNumber(versions.size() + 1)
                 .image2DUrl(renderUrl)
-                .aiDescription(prompt)
+                .aiDescription(safePrompt)
                 .project(project)
                 .build();
 

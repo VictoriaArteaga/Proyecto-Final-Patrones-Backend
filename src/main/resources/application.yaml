@@ -44,7 +44,6 @@ spring:
         temp.use_jdbc_metadata_defaults: false
         boot.allow_jdbc_metadata_access: false
 
-
 supabase:
   url: ${SUPABASE_URL}
   key: ${SUPABASE_KEY}
@@ -55,12 +54,10 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: 86400000
 
-#  Configuración de CORS
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
 
-# Configuración de TripoAI
 tripo:
   api-key: ${TRIPO_API_KEY}
   base-url: https://api.tripo3d.ai/v2/openapi

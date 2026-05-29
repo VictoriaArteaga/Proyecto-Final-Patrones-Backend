@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 public class HomeController {
 
-    @GetMapping("/")
+    @GetMapping
     public Map<String, String> home() {
         return Map.of(
                 "status", "ok",

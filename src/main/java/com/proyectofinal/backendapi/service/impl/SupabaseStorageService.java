@@ -81,7 +81,8 @@ public class SupabaseStorageService implements StorageService{
     // Método privado generíco.
     private String uploadFile(MultipartFile file, String path) {
 
-        String fileName = path + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename().replace(" ", "_") : "file";
+        String fileName = path + "/" + System.currentTimeMillis() + "_" + originalName;
 
         String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
                 supabaseConfig.getUrl(),
