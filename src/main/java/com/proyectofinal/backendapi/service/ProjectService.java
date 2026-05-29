@@ -36,6 +36,9 @@ public interface ProjectService {
     // Actualizar parámetros después de un rechazo.
     Project updateParameters(UUID id, User user, ParametersDTO params);
 
+    // Regenerar el render 2D tras un rechazo, con descripción detallada y parámetros.
+    Project regenerate2D(UUID id, User user, ParametersDTO parameters, String description);
+
     // Iniciar la generación del modelo 3D final.
     Project generate3D(UUID projectId, User user);
 }
