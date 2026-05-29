@@ -113,12 +113,18 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             // flux.1_kontext_pro soporta imagen de referencia.
             advancedParams.put("model_version", "flux.1_kontext_pro");
 
-            if (project.getImageOriginalUrl() != null && !project.getImageOriginalUrl().isBlank()) {
-                advancedParams.put("url", project.getImageOriginalUrl());
+            // OBLIGATORIO: toda generación parte de la imagen ORIGINAL del usuario.
+            if (project.getImageOriginalUrl() == null || project.getImageOriginalUrl().isBlank()) {
+                throw new AiGenerationException(
+                        "El proyecto no tiene imagen original; no se puede regenerar.");
             }
+            advancedParams.put("url", project.getImageOriginalUrl());
 
-            // Mapeo categoría → templates/flags de Tripo (delegado al resolver).
-            tripoTemplateResolver.apply(advancedParams, project, paramsToUse);
+            // Nota: NO aplicamos templates de Tripo (3d_enhance / asset_extraction):
+            // esos pipelines pueden ignorar/transformar la foto base. Así la regeneración
+            // edita la imagen original del usuario igual que el render inicial; los
+            // parámetros entran por el prompt.
+            // tripoTemplateResolver.apply(advancedParams, project, paramsToUse);
 
             byte[] generated = tripoImageClient.generateParameterizedImage(prompt, advancedParams);
 
@@ -181,10 +187,16 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             project.setVersions(versions);
         }
 
+        // Recortamos el prompt por seguridad: si la columna ai_description sigue
+        // siendo varchar(255) en la BD, evita el error "value too long".
+        String safePrompt = (prompt != null && prompt.length() > 250)
+                ? prompt.substring(0, 250)
+                : prompt;
+
         ProjectVersion version = ProjectVersion.builder()
                 .versionNumber(versions.size() + 1)
                 .image2DUrl(renderUrl)
-                .aiDescription(prompt)
+                .aiDescription(safePrompt)
                 .project(project)
                 .build();
 
