@@ -24,8 +24,7 @@ public class ParametersDTO {
     private List<String> additionalElements;
     private String detailDescription;
 
-    // --- Campos para INTERIOR_ROOM y FURNITURE_ITEM (opcionales) ---
-    private String roomType;
+    // --- Campos para FURNITURE_ITEM (opcionales) ---
     private String furnitureType;
     private Double furnitureWidthCm;
     private Double furnitureHeightCm;

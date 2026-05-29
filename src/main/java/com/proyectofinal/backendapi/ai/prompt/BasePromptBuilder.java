@@ -38,7 +38,7 @@ public abstract class BasePromptBuilder implements PromptBuilder {
                 .userDescription(userDescription)
                 .projectContext(project.getName());
         return builder
-                .referenceLock()
+                .referenceLock(referenceLockText())
                 .fidelityLock(fidelityLockText())
                 .style(BASE_STYLE)
                 .build();
@@ -82,6 +82,14 @@ public abstract class BasePromptBuilder implements PromptBuilder {
     // Cláusula de fidelidad: por defecto genérica, sobreescribible por categoría.
     protected String fidelityLockText() {
         return DEFAULT_FIDELITY_LOCK;
+    }
+
+    // Cláusula de "anclaje" a la foto de referencia. Por defecto pide conservar
+    // cámara, escala, iluminación y fondo (útil para exteriores/objetos). Las
+    // categorías que necesitan transformar la escena completa (p. ej. interiores)
+    // la sobreescriben para no congelar la imagen.
+    protected String referenceLockText() {
+        return REFERENCE_LOCK;
     }
 
 
@@ -166,14 +174,7 @@ public abstract class BasePromptBuilder implements PromptBuilder {
             return this;
         }
 
-        // --- Métodos para INTERIOR_ROOM y FURNITURE_ITEM ---
-
-        PromptInternalBuilder roomType(String roomType) {
-            if (isNotBlank(roomType)) {
-                append("Room type: " + roomType + ".");
-            }
-            return this;
-        }
+        // --- Métodos para FURNITURE_ITEM ---
 
         PromptInternalBuilder furnitureType(String furnitureType) {
             if (isNotBlank(furnitureType)) {
@@ -217,8 +218,8 @@ public abstract class BasePromptBuilder implements PromptBuilder {
             return append("Style: " + style + ".");
         }
 
-        PromptInternalBuilder referenceLock() {
-            return append(REFERENCE_LOCK);
+        PromptInternalBuilder referenceLock(String text) {
+            return append(text);
         }
 
         PromptInternalBuilder fidelityLock(String text) {

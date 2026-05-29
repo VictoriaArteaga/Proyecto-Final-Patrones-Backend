@@ -28,8 +28,7 @@ public class ProjectMapper {
                             : null);
             params.setDetailDescription(project.getParameters().getDetailDescription());
 
-            // Campos de interior / mueble.
-            params.setRoomType(project.getParameters().getRoomType());
+            // Campos de mueble.
             params.setFurnitureType(project.getParameters().getFurnitureType());
             params.setFurnitureWidthCm(project.getParameters().getFurnitureWidthCm());
             params.setFurnitureHeightCm(project.getParameters().getFurnitureHeightCm());
