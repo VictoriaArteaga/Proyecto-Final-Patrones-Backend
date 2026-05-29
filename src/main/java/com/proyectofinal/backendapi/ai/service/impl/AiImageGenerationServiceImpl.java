@@ -14,6 +14,7 @@ import com.proyectofinal.backendapi.exception.InvalidStateException;
 import com.proyectofinal.backendapi.exception.ProjectNotFoundException;
 import com.proyectofinal.backendapi.model.*;
 import com.proyectofinal.backendapi.repository.ProjectRepository;
+import com.proyectofinal.backendapi.service.NotificationService;
 import com.proyectofinal.backendapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
     private final TripoTemplateResolver tripoTemplateResolver;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -78,6 +80,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             projectRepository.save(project);
 
             log.info("[Tripo Service] Render inicial generado exitosamente: {}", renderUrl);
+            notificationService.create(user,
+                    "Tu render 2D de \"" + project.getName() + "\" ya está listo para revisión.",
+                    "success");
             return AiMapper.toResponse(project, "Render inicial (Foto + Texto) generado correctamente con Tripo3D.");
 
         } catch (Exception ex) {
@@ -85,6 +90,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
                     projectId, ex.getMessage(), ex);
             project.setStatus(ProjectState.FAILED);
             projectRepository.save(project);
+            notificationService.create(user,
+                    "Hubo un problema al generar el render 2D de \"" + project.getName() + "\". Inténtalo de nuevo.",
+                    "error");
             throw new AiGenerationException("No se pudo generar el render inicial con Tripo: " + ex.getMessage(), ex);
         }
     }
@@ -139,6 +147,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
             projectRepository.save(project);
 
             log.info("[Tripo Service] Render avanzado generado exitosamente: {}", renderUrl);
+            notificationService.create(user,
+                    "Tu nuevo render 2D de \"" + project.getName() + "\" ya está listo para revisión.",
+                    "success");
             return AiMapper.toResponse(project,
                     "Render refinado con parámetros generado correctamente con Tripo3D.");
 
@@ -147,6 +158,9 @@ public class AiImageGenerationServiceImpl implements AiImageGenerationService {
                     projectId, ex.getMessage(), ex);
             project.setStatus(ProjectState.FAILED);
             projectRepository.save(project);
+            notificationService.create(user,
+                    "Hubo un problema al generar el render 2D de \"" + project.getName() + "\". Inténtalo de nuevo.",
+                    "error");
             throw new AiGenerationException(
                     "No se pudo refinar el render con parámetros: " + ex.getMessage(), ex);
         }

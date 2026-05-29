@@ -7,6 +7,7 @@ import com.proyectofinal.backendapi.render3d.entity.TaskStatus;
 import com.proyectofinal.backendapi.render3d.entity.TaskType;
 import com.proyectofinal.backendapi.render3d.integration.GenerationTaskRepository;
 import com.proyectofinal.backendapi.service.impl.SupabaseStorageService;
+import com.proyectofinal.backendapi.service.NotificationService;
 import com.proyectofinal.backendapi.model.ProjectState;
 import com.proyectofinal.backendapi.repository.ProjectRepository;
 import com.proyectofinal.backendapi.render3d.integration.TripoException;
@@ -32,6 +33,7 @@ public class RenderService {
     private final TripoClient              tripoClient;
     private final SupabaseStorageService   supabaseClient;
     private final ProjectRepository        projectRepository;
+    private final NotificationService      notificationService;
 
 //  Iniciar la generación.
     @Transactional
@@ -89,6 +91,9 @@ public class RenderService {
                     p.setModel3DUrl(supabaseUrl);
                     p.setStatus(ProjectState.COMPLETED);
                     projectRepository.save(p);
+                    notificationService.create(p.getUser(),
+                            "¡Tu modelo 3D de \"" + p.getName() + "\" ya está listo!",
+                            "success");
                 } else {
                     log.info("[RenderService] Resultado descartado: el proyecto {} ya no está generando (cancelado).",
                             p.getId());
@@ -107,6 +112,9 @@ public class RenderService {
                 if (p.getStatus() == ProjectState.GENERATING_3D_MODEL) {
                     p.setStatus(ProjectState.FAILED);
                     projectRepository.save(p);
+                    notificationService.create(p.getUser(),
+                            "Hubo un problema al generar el modelo 3D de \"" + p.getName() + "\". Inténtalo de nuevo.",
+                            "error");
                 }
             });
         }

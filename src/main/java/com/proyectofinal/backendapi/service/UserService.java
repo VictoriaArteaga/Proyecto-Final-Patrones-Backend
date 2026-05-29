@@ -153,5 +153,20 @@ public class UserService {
                 .orElseThrow(() -> new UnauthorizedException("Usuario no encontrado"));
     }
 
+    // GUARDAR / ACTUALIZAR FOTO DE PERFIL (ligada a la cuenta).
+    public User updateAvatar(User user, String avatar) {
+        if (avatar == null || avatar.isBlank()) {
+            throw new BadRequestException("La imagen no puede estar vacía");
+        }
+        user.setAvatarUrl(avatar);
+        return userRepository.save(user);
+    }
+
+    // ELIMINAR FOTO DE PERFIL.
+    public User deleteAvatar(User user) {
+        user.setAvatarUrl(null);
+        return userRepository.save(user);
+    }
+
 }
 

@@ -14,4 +14,5 @@ public class UserProfileDTO {
     private Role role;
     private String recoveryEmail;
     private boolean twoFactorEnabled;
+    private String avatarUrl;
 }
