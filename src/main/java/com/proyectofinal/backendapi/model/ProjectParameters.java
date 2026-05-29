@@ -31,8 +31,9 @@ public class ProjectParameters {
     private Integer numberOfRooms;
     private Integer numberOfBathrooms;
 
-    // Elementos opcionales.
-    @ElementCollection
+    // Elementos opcionales. EAGER: se carga junto con los parámetros para poder
+    // serializarlos sin sesión abierta (open-in-view: false).
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "project_additional_elements",
             joinColumns = @JoinColumn(name = "parameters_id"))
     @Column(name = "element")
