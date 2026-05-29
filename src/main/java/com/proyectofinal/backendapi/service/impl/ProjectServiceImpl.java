@@ -84,16 +84,21 @@ public class ProjectServiceImpl implements ProjectService {
     // 3. GENERAR RENDERIZADO 2D.
     @Override
     @Transactional
-    public Project generateInitial2D(UUID projectId, User user) {
+    public Project generateInitial2D(UUID projectId, User user, String description) {
 
         Project project = getProjectById(projectId, user);
         validateState(project, ProjectState.IMAGE_UPLOADED);
+
+        // Usamos la descripción real del usuario; si viene vacía, caemos a un prompt genérico.
+        String userDescription = (description != null && !description.isBlank())
+                ? description
+                : "Generar diseño 2D";
 
         // PASO 2: Usa la variable inyectada.
         aiImageGenerationService.generateInitialRender(
                 projectId,
                 user,
-                "Generar diseño 2D"
+                userDescription
         );
 
         return getProjectById(projectId, user);

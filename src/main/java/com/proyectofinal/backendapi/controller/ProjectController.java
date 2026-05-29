@@ -1,5 +1,6 @@
 package com.proyectofinal.backendapi.controller;
 
+import com.proyectofinal.backendapi.dto.project.Generate2DRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectResponseDTO;
@@ -45,10 +46,13 @@ public class ProjectController {
     @PostMapping("/{id}/generate-2d")
     public ResponseEntity<ProjectResponseDTO> generate2D(
             @PathVariable UUID id,
+            @RequestBody(required = false) Generate2DRequestDTO body,
             @AuthenticationPrincipal User user
     ) {
 
-        Project project = projectService.generateInitial2D(id, user);
+        String description = (body != null) ? body.getDescription() : null;
+
+        Project project = projectService.generateInitial2D(id, user, description);
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 

@@ -17,7 +17,8 @@ public interface ProjectService {
     Project getProjectById(UUID id, User user);
 
     // Iniciar el procesamiento de la IA para el render 2D.
-    Project generateInitial2D(UUID projectId, User user);
+    // La descripción libre del usuario se inyecta en el prompt inicial.
+    Project generateInitial2D(UUID projectId, User user, String description);
 
     // Aprobar el diseño 2D para el modelo a 3D.
     Project approveProject(UUID projectId, User user);
