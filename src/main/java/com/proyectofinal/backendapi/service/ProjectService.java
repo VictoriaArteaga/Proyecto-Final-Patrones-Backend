@@ -41,4 +41,7 @@ public interface ProjectService {
 
     // Iniciar la generación del modelo 3D final.
     Project generate3D(UUID projectId, User user);
+
+    // Detener la generación 3D en curso (vuelve a estado reanudable).
+    Project cancel3D(UUID projectId, User user);
 }

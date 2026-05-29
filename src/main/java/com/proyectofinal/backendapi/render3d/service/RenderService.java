@@ -7,6 +7,8 @@ import com.proyectofinal.backendapi.render3d.entity.TaskStatus;
 import com.proyectofinal.backendapi.render3d.entity.TaskType;
 import com.proyectofinal.backendapi.render3d.integration.GenerationTaskRepository;
 import com.proyectofinal.backendapi.service.impl.SupabaseStorageService;
+import com.proyectofinal.backendapi.model.ProjectState;
+import com.proyectofinal.backendapi.repository.ProjectRepository;
 import com.proyectofinal.backendapi.render3d.integration.TripoException;
 import com.proyectofinal.backendapi.render3d.integration.TripoClient;
 import com.proyectofinal.backendapi.render3d.integration.TripoClient.TripoTaskData;
@@ -29,6 +31,7 @@ public class RenderService {
     private final GenerationTaskRepository taskRepo;
     private final TripoClient              tripoClient;
     private final SupabaseStorageService   supabaseClient;
+    private final ProjectRepository        projectRepository;
 
 //  Iniciar la generación.
     @Transactional
@@ -78,12 +81,34 @@ public class RenderService {
             // Guardar éxito
             task.markAsDone(supabaseUrl);
             taskRepo.saveAndFlush(task);
+
+            // Reflejar el resultado en el proyecto SOLO si sigue generando
+            // (si el usuario canceló, el estado ya cambió y descartamos el resultado).
+            projectRepository.findById(task.getProjectId()).ifPresent(p -> {
+                if (p.getStatus() == ProjectState.GENERATING_3D_MODEL) {
+                    p.setModel3DUrl(supabaseUrl);
+                    p.setStatus(ProjectState.COMPLETED);
+                    projectRepository.save(p);
+                } else {
+                    log.info("[RenderService] Resultado descartado: el proyecto {} ya no está generando (cancelado).",
+                            p.getId());
+                }
+            });
+
             log.info("[RenderService] Generación completada con éxito. Task={} → URL Supabase", taskId);
 
         } catch (Exception ex) {
             log.error("[RenderService] Error crítico en segundo plano para tarea {}: {}", taskId, ex.getMessage(), ex);
             task.markAsError(ex.getMessage());
             taskRepo.saveAndFlush(task);
+
+            // Marcamos el proyecto como fallido solo si seguía generando.
+            projectRepository.findById(task.getProjectId()).ifPresent(p -> {
+                if (p.getStatus() == ProjectState.GENERATING_3D_MODEL) {
+                    p.setStatus(ProjectState.FAILED);
+                    projectRepository.save(p);
+                }
+            });
         }
     }
 
