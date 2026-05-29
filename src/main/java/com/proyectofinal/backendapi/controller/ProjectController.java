@@ -3,6 +3,7 @@ package com.proyectofinal.backendapi.controller;
 import com.proyectofinal.backendapi.dto.project.Generate2DRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectRequestDTO;
+import com.proyectofinal.backendapi.dto.project.Regenerate2DRequestDTO;
 import com.proyectofinal.backendapi.dto.project.ProjectResponseDTO;
 import com.proyectofinal.backendapi.mapper.ProjectMapper;
 import com.proyectofinal.backendapi.model.Project;
@@ -113,6 +114,19 @@ public class ProjectController {
     ) {
 
         Project project = projectService.updateParameters(id, user, params);
+        return ResponseEntity.ok(ProjectMapper.toDTO(project));
+    }
+
+    // 5b. REGENERAR RENDER 2D (tras rechazo) con descripción detallada y parámetros.
+    @PostMapping("/{id}/regenerate-2d")
+    public ResponseEntity<ProjectResponseDTO> regenerate2D(
+            @PathVariable UUID id,
+            @RequestBody Regenerate2DRequestDTO body,
+            @AuthenticationPrincipal User user
+    ) {
+
+        Project project = projectService.regenerate2D(
+                id, user, body.getParameters(), body.getDescription());
         return ResponseEntity.ok(ProjectMapper.toDTO(project));
     }
 

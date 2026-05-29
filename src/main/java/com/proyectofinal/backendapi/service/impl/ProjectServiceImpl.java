@@ -172,6 +172,24 @@ public class ProjectServiceImpl implements ProjectService {
         return projectRepository.save(project);
     }
 
+    // 6b. REGENERAR RENDER 2D (tras rechazo) con descripción detallada y parámetros.
+    @Override
+    @Transactional
+    public Project regenerate2D(UUID projectId, User user, ParametersDTO parameters, String description) {
+        Project project = getProjectById(projectId, user);
+
+        // Validación de parámetros según la categoría del proyecto.
+        if (parameters != null) {
+            ProjectParameters pp = objectMapper.convertValue(parameters, ProjectParameters.class);
+            parametersValidatorFactory.forCategory(project.getCategory()).validate(pp);
+        }
+
+        // Genera un nuevo render 2D (valida estado REJECTED_2D internamente) -> WAITING_2D_APPROVAL.
+        aiImageGenerationService.generateRenderWithParameters(projectId, user, parameters, description);
+
+        return getProjectById(projectId, user);
+    }
+
     // 7. GENERATE 3D MODEL.
     @Override
     @Transactional
