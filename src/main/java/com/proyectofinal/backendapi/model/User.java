@@ -47,4 +47,9 @@ public class User {
     private String twoFactorCode;
     private LocalDateTime twoFactorCodeExpiry;
 
+    // Foto de perfil: data-URL base64 (o una URL si en el futuro se sube a storage).
+    // TEXT (PostgreSQL) porque el base64 de una imagen puede ser grande.
+    @Column(columnDefinition = "TEXT")
+    private String avatarUrl;
+
 }

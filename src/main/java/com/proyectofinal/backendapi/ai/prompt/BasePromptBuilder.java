@@ -23,6 +23,14 @@ public abstract class BasePromptBuilder implements PromptBuilder {
             "Strict fidelity: the rendered output must include every feature explicitly requested by "
                     + "the user. Do not omit, simplify or substitute any element.";
 
+    // Cláusula para la generación con parámetros: el resultado debe ser 100% fiel
+    // a los TRES pilares a la vez (imagen original + parámetros + descripción).
+    private static final String PARAM_FIDELITY_LOCK =
+            "ABSOLUTE FIDELITY, honor all three at once: (1) use the reference photograph as the base, "
+                    + "keeping its exact perspective, scale, lighting and background; (2) apply EVERY "
+                    + "parameter listed with its exact value; (3) include EVERY detail of the user "
+                    + "requirements. Do not omit, simplify, invent or contradict any of them.";
+
     @Override
     public final String buildInitialPrompt(Project project, String userDescription) {
         PromptInternalBuilder builder = new PromptInternalBuilder()
@@ -41,18 +49,21 @@ public abstract class BasePromptBuilder implements PromptBuilder {
                                                  ProjectParameters parameters,
                                                  String userDescription) {
 
+        // Orden por prioridad para que NADA crítico se pierda si Tripo recorta a
+        // 1024 caracteres: 1) descripción del usuario, 2) parámetros exactos,
+        // 3) instrucción de edición sobre la foto original, 4) cláusula de fidelidad
+        // a los 3 pilares. El estilo va al final (lo único prescindible).
         PromptInternalBuilder builder = new PromptInternalBuilder()
-                .base(parameterizedEditInstruction())
                 .userDescription(userDescription)
-                .projectContext(project.getName());
+                .base(parameterizedEditInstruction());
 
         if (parameters != null) {
             applyParameters(builder, parameters);
         }
 
         return builder
-                .referenceLock()
-                .fidelityLock(fidelityLockText())
+                .fidelityLock(PARAM_FIDELITY_LOCK)
+                .projectContext(project.getName())
                 .style(BASE_STYLE)
                 .build();
     }

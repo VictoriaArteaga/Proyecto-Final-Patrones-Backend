@@ -13,6 +13,7 @@ import com.proyectofinal.backendapi.repository.ProjectRepository;
 import com.proyectofinal.backendapi.render3d.dto.Generate3DRequest;
 import com.proyectofinal.backendapi.render3d.entity.GenerationTask;
 import com.proyectofinal.backendapi.render3d.service.RenderService;
+import com.proyectofinal.backendapi.service.NotificationService;
 import com.proyectofinal.backendapi.service.ProjectService;
 import com.proyectofinal.backendapi.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final AiImageGenerationService aiImageGenerationService;
     private final ParametersValidatorFactory parametersValidatorFactory;
     private final RenderService renderService; // Generación 3D real (Tripo) en segundo plano.
+    private final NotificationService notificationService;
 
     // 1. CREAR PROYECTO CON IMAGEN INICIAL.
     @Override
@@ -137,7 +139,11 @@ public class ProjectServiceImpl implements ProjectService {
         logger.info("El usuario {} aprobó el diseño 2D para el proyecto {}.", user.getId(), projectId);
         project.setStatus(ProjectState.WAITING_FINAL_APPROVAL);
 
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+        notificationService.create(user,
+                "Aprobaste el diseño 2D de \"" + project.getName() + "\". Ya puedes generar el modelo 3D.",
+                "info");
+        return saved;
     }
 
     // 5. RECHAZAR EL DISEÑO 2D.
@@ -150,7 +156,11 @@ public class ProjectServiceImpl implements ProjectService {
         logger.warn("Proyecto {} rechazado por el usuario {}. Esperando nuevos parámetros.", projectId, user.getId());
         project.setStatus(ProjectState.REJECTED_2D);
 
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+        notificationService.create(user,
+                "Descartaste el diseño 2D de \"" + project.getName() + "\". Ajusta los parámetros para regenerarlo.",
+                "info");
+        return saved;
     }
 
     // 6. ACTUALIZAR PARÁMETROS (Después del rechazo).
@@ -224,6 +234,10 @@ public class ProjectServiceImpl implements ProjectService {
         GenerationTask task = renderService.startGeneration(request);
         renderService.processAsync(task.getId(), imageUrl);
 
+        notificationService.create(user,
+                "Comenzó la generación del modelo 3D de \"" + project.getName() + "\". Te avisaremos cuando esté listo.",
+                "info");
+
         return getProjectById(projectId, user);
     }
 
@@ -240,7 +254,11 @@ public class ProjectServiceImpl implements ProjectService {
         logger.info("El usuario {} detuvo la generación 3D del proyecto {}.", user.getId(), projectId);
         project.setStatus(ProjectState.WAITING_FINAL_APPROVAL);
 
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+        notificationService.create(user,
+                "Detuviste la generación del modelo 3D de \"" + project.getName() + "\".",
+                "info");
+        return saved;
     }
 
 }
