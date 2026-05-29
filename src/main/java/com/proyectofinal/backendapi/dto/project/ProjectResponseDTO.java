@@ -1,5 +1,6 @@
 package com.proyectofinal.backendapi.dto.project;
 
+import com.proyectofinal.backendapi.model.DesignCategory;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class ProjectResponseDTO {
     private UUID id;
     private String name;
     private String status;
+    private DesignCategory category;
 
     private String image2DUrl;
     private String model3DUrl;

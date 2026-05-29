@@ -34,7 +34,7 @@ public class ProjectController {
             @AuthenticationPrincipal User user
     ) {
 
-        Project project = projectService.createProjectWithImage(file, user, dto.getName());
+        Project project = projectService.createProjectWithImage(file, user, dto.getName(), dto.getCategory());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

@@ -3,6 +3,7 @@ package com.proyectofinal.backendapi.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proyectofinal.backendapi.ai.service.AiImageGenerationService;
 import com.proyectofinal.backendapi.ai.service.impl.AiImageGenerationServiceImpl;
+import com.proyectofinal.backendapi.ai.validation.ParametersValidatorFactory;
 import com.proyectofinal.backendapi.dto.project.ParametersDTO;
 import com.proyectofinal.backendapi.exception.BadRequestException;
 import com.proyectofinal.backendapi.exception.InvalidStateException;
@@ -31,14 +32,16 @@ public class ProjectServiceImpl implements ProjectService {
     private final StorageService storageService;
     private final ObjectMapper objectMapper; // Para procesar JSON de parámetros.
     private final AiImageGenerationService aiImageGenerationService;
+    private final ParametersValidatorFactory parametersValidatorFactory;
 
     // 1. CREAR PROYECTO CON IMAGEN INICIAL.
     @Override
     @Transactional
-    public Project createProjectWithImage(MultipartFile file, User user, String name) {
+    public Project createProjectWithImage(MultipartFile file, User user, String name, DesignCategory category) {
 
         // Log con contexto de usuario.
-        logger.info("El usuario {} está creando el proyecto: '{}'", user.getId(), name);
+        logger.info("El usuario {} está creando el proyecto: '{}' categoría={}",
+                user.getId(), name, category);
 
         // Carpeta organizada por ID de usuario.
         String path = user.getId().toString();
@@ -48,6 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .name(name)
                 .user(user)
                 .status(ProjectState.IMAGE_UPLOADED) // Estado inicial: Imagen cargada.
+                .category(category)
                 .imageOriginalUrl(imageUrl)
                 .build();
 
@@ -131,6 +135,9 @@ public class ProjectServiceImpl implements ProjectService {
         logger.info("El usuario {} está actualizando los parámetros del proyecto {}.", user.getId(), projectId);
 
         ProjectParameters projectParams = objectMapper.convertValue(params, ProjectParameters.class);
+
+        // Validación específica por categoría.
+        parametersValidatorFactory.forCategory(project.getCategory()).validate(projectParams);
 
         projectParams.setProject(project);
         project.setParameters(projectParams);
